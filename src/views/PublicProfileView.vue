@@ -1178,16 +1178,19 @@ details[open] > .list-summary::before {
   display: flex;
   gap: 8px;
   margin-bottom: 10px;
+  width: 100%;
 }
 .share-row .share-btn {
   margin-bottom: 0;
+  width: auto;
 }
 .share-btn-inline {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
 }
 .qr-btn-inline {
   flex: 0 0 auto;
-  padding: 12px 16px;
+  padding: 12px 18px;
 }
 .cta-sub {
   font-size: 11px;
