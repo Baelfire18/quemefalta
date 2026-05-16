@@ -7,6 +7,7 @@ import { useShare } from '@/composables/useShare';
 import { TOTAL_STICKERS, TOTAL_SECTIONS, ALBUM_SECTIONS, codeForSticker } from '@/lib/albumData';
 import { useMeta } from '@/composables/useMeta';
 import { track } from '@/lib/analytics';
+import QrModal from '@/components/QrModal.vue';
 
 interface PublicProfile {
   id: string;
@@ -158,6 +159,20 @@ const dupesBySection = computed(() => {
 
 const { share, isNativeShareAvailable } = useShare();
 const sharing = ref(false);
+const showQrModal = ref(false);
+
+const profileUrl = computed(() =>
+  profile.value ? `${globalThis.location.origin}/u/${profile.value.username}` : '',
+);
+
+function openQrModal() {
+  if (!profile.value) return;
+  track('show_qr', {
+    from: 'public_profile',
+    own: isOwnProfile.value,
+  });
+  showQrModal.value = true;
+}
 
 async function shareProfile() {
   if (sharing.value || !profile.value) return;
@@ -568,33 +583,64 @@ function compareWithOther() {
           Escribir por WhatsApp
         </a>
 
-        <button
-          class="share-btn"
-          :disabled="sharing"
-          :aria-label="
-            isOwnProfile ? 'Compartir mi perfil' : `Compartir el perfil de ${displayName}`
-          "
-          @click="shareProfile"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
+        <div class="share-row">
+          <button
+            class="share-btn share-btn-inline"
+            :disabled="sharing"
+            :aria-label="
+              isOwnProfile ? 'Compartir mi perfil' : `Compartir el perfil de ${displayName}`
+            "
+            @click="shareProfile"
           >
-            <circle cx="18" cy="5" r="3" />
-            <circle cx="6" cy="12" r="3" />
-            <circle cx="18" cy="19" r="3" />
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-          </svg>
-          {{ isNativeShareAvailable ? 'Compartir perfil' : 'Copiar link' }}
-        </button>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            {{ isNativeShareAvailable ? 'Compartir' : 'Copiar link' }}
+          </button>
+          <button
+            class="share-btn qr-btn-inline"
+            :aria-label="isOwnProfile ? 'Mostrar mi QR' : `Mostrar QR de ${displayName}`"
+            @click="openQrModal"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+              <line x1="14" y1="14" x2="14" y2="17" />
+              <line x1="17" y1="14" x2="17" y2="14" />
+              <line x1="14" y1="20" x2="14" y2="21" />
+              <line x1="17" y1="17" x2="21" y2="17" />
+              <line x1="21" y1="14" x2="21" y2="17" />
+              <line x1="17" y1="21" x2="21" y2="21" />
+              <line x1="20" y1="20" x2="21" y2="20" />
+            </svg>
+            QR
+          </button>
+        </div>
 
         <button v-if="isOwnProfile" class="cta-btn" @click="router.push('/album')">
           Volver a mi álbum
@@ -676,6 +722,12 @@ function compareWithOther() {
         </a>
       </div>
     </div>
+    <QrModal
+      v-if="showQrModal && profile"
+      :url="profileUrl"
+      :username="profile.username"
+      @close="showQrModal = false"
+    />
   </div>
 </template>
 
@@ -1121,6 +1173,21 @@ details[open] > .list-summary::before {
 .share-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+.share-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.share-row .share-btn {
+  margin-bottom: 0;
+}
+.share-btn-inline {
+  flex: 1;
+}
+.qr-btn-inline {
+  flex: 0 0 auto;
+  padding: 12px 16px;
 }
 .cta-sub {
   font-size: 11px;
