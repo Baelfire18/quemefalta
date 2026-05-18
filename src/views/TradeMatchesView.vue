@@ -11,7 +11,7 @@ const router = useRouter();
 const { profile: myProfile } = useAuth();
 const { matches, loading, loaded, error, load } = useTradeMatches();
 
-useMeta(computed(() => ({ title: 'Con quién cambiar cerca tuyo — QueMeFalta' })));
+useMeta(computed(() => ({ title: 'Con quién intercambiar cerca tuyo — QueMeFalta' })));
 
 const usefulMatches = computed(() => matches.value.filter((m) => m.their_dupes_for_me > 0));
 const charityMatches = computed(() =>
@@ -59,7 +59,7 @@ onMounted(() => {
     <header class="tm-header">
       <button type="button" class="tm-back" aria-label="Volver" @click="router.back()">‹</button>
       <div class="tm-title-wrap">
-        <h1 class="tm-title">Con quién cambiar cerca tuyo</h1>
+        <h1 class="tm-title">Con quién intercambiar cerca tuyo</h1>
         <p class="tm-sub">Usuarios con láminas que te sirven, o a los que les sirven las tuyas.</p>
       </div>
       <button

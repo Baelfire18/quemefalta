@@ -66,10 +66,10 @@ function copyMissing() {
   const lines: string[] = [`Me faltan ${stats.value.missing} láminas del álbum:`];
   for (const group of missingBySection.value) {
     lines.push(
-      `\n${group.section.name}: ${group.items.map((n: number) => codeForSticker(n)).join(', ')}`,
+      `${group.section.name}: ${group.items.map((n: number) => codeForSticker(n)).join(', ')}`,
     );
   }
-  const text = lines.join('\n');
+  const text = lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/';
   navigator.clipboard?.writeText(text).then(
     () => emit('copied', '¡Lista copiada al portapapeles!'),
     () => alert('No se pudo copiar. Selecciona manualmente.'),

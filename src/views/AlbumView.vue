@@ -462,7 +462,7 @@ const userInitial = computed(() => {
                 <span class="pm-user">@{{ profile.username }}</span>
               </router-link>
               <router-link class="pm-item" to="/cambios">
-                <span>Con quién cambiar</span>
+                <span>Con quién intercambiar</span>
               </router-link>
               <button
                 class="pm-item pm-item-toggle"

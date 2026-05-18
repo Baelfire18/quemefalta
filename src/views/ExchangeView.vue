@@ -110,7 +110,9 @@ function copyAGivesB() {
     exchange.value.aGivesB,
     exchange.value.aGivesBCount,
   );
-  navigator.clipboard?.writeText(text).then(() => showCopied('Lista copiada'));
+  navigator.clipboard
+    ?.writeText(text + '\n\nhttps://quemefalta.vercel.app/')
+    .then(() => showCopied('Lista copiada'));
 }
 
 function copyBGivesA() {
@@ -121,7 +123,9 @@ function copyBGivesA() {
     exchange.value.bGivesA,
     exchange.value.bGivesACount,
   );
-  navigator.clipboard?.writeText(text).then(() => showCopied('Lista copiada'));
+  navigator.clipboard
+    ?.writeText(text + '\n\nhttps://quemefalta.vercel.app/')
+    .then(() => showCopied('Lista copiada'));
 }
 
 function copyAll() {
@@ -147,7 +151,7 @@ function copyAll() {
       ),
     );
   }
-  const text = parts.join('\n\n');
+  const text = parts.join('\n\n') + '\n\nhttps://quemefalta.vercel.app/';
   navigator.clipboard?.writeText(text).then(() => showCopied('Intercambio completo copiado'));
 }
 

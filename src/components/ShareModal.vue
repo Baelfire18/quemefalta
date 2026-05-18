@@ -38,7 +38,7 @@ const url = computed(() => {
 });
 
 const shareText = computed(() => {
-  return `Mira mi álbum del Mundial: tengo ${props.pct}% completo. ¿Tienes láminas que cambiar?`;
+  return `Mira mi álbum del Mundial: tengo ${props.pct}% completo. ¿Tienes láminas que intercambiar?`;
 });
 
 const shareTitle = computed(() => {

@@ -117,9 +117,9 @@ const metaInfo = computed(() => {
   const name = profile.value.display_name || profile.value.username;
   return {
     title: `${name} — ${stats.value.pct}% del álbum — QueMeFalta`,
-    description: `${name} tiene ${stats.value.owned} de ${TOTAL_STICKERS} láminas del álbum del Mundial 2026 (${stats.value.pct}% completo). Mira su progreso y conecta para cambiar.`,
+    description: `${name} tiene ${stats.value.owned} de ${TOTAL_STICKERS} láminas del álbum del Mundial 2026 (${stats.value.pct}% completo). Mira su progreso y conecta para intercambiar.`,
     ogTitle: `${name} — ${stats.value.pct}% del álbum del Mundial`,
-    ogDescription: `${stats.value.owned} láminas de ${TOTAL_STICKERS} (${stats.value.pct}% completo). ${stats.value.dupes > 0 ? `${stats.value.dupes} repetidas para cambiar.` : ''}`,
+    ogDescription: `${stats.value.owned} láminas de ${TOTAL_STICKERS} (${stats.value.pct}% completo). ${stats.value.dupes > 0 ? `${stats.value.dupes} repetidas para intercambiar.` : ''}`,
   };
 });
 
@@ -206,16 +206,18 @@ function copyMissing() {
   for (const g of missingBySection.value) {
     lines.push(`${g.section.name}: ${g.items.map((n) => codeForSticker(n)).join(', ')}`);
   }
-  navigator.clipboard?.writeText(lines.join('\n')).then(() => {
-    copied.value = 'Faltantes copiadas';
-    setTimeout(() => {
-      copied.value = '';
-    }, 2000);
-  });
+  navigator.clipboard
+    ?.writeText(lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/')
+    .then(() => {
+      copied.value = 'Faltantes copiadas';
+      setTimeout(() => {
+        copied.value = '';
+      }, 2000);
+    });
 }
 
 function copyDupes() {
-  const lines = [`${displayName.value} tiene ${stats.value.dupes} repetidas para cambiar:`];
+  const lines = [`${displayName.value} tiene ${stats.value.dupes} repetidas para intercambiar:`];
   for (const g of dupesBySection.value) {
     lines.push(
       `${g.section}: ${g.items
@@ -223,12 +225,14 @@ function copyDupes() {
         .join(', ')}`,
     );
   }
-  navigator.clipboard?.writeText(lines.join('\n')).then(() => {
-    copied.value = 'Repetidas copiadas';
-    setTimeout(() => {
-      copied.value = '';
-    }, 2000);
-  });
+  navigator.clipboard
+    ?.writeText(lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/')
+    .then(() => {
+      copied.value = 'Repetidas copiadas';
+      setTimeout(() => {
+        copied.value = '';
+      }, 2000);
+    });
 }
 
 // Backoff para auto-retry. Despues de agotarlos, mostramos error con boton manual.
@@ -646,7 +650,7 @@ function compareWithOther() {
           Volver a mi álbum
         </button>
         <button v-if="isOwnProfile" class="compare-btn" @click="router.push('/cambios')">
-          Con quién cambiar
+          Con quién intercambiar
         </button>
         <!-- Compare (own profile) -->
         <div v-if="isOwnProfile" class="compare-row">

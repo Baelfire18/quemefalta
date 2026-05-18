@@ -78,7 +78,7 @@ const steps: Step[] = [
   },
   {
     selector: '.tab:nth-child(3)',
-    text: 'Y aquí tus repetidas con la cantidad de cada una — también puedes copiar la lista para cambiar.',
+    text: 'Y aquí tus repetidas con la cantidad de cada una — también puedes copiar la lista para intercambiar.',
     position: 'top',
     setup: () => {
       const tab = document.querySelector('.tab:nth-child(3)') as HTMLElement;
@@ -87,7 +87,7 @@ const steps: Step[] = [
   },
   {
     selector: '.hdr-icon-btn[title="Compartir mi perfil"]',
-    text: 'Comparte tu perfil público para que otros vean tu progreso y te contacten para cambiar.',
+    text: 'Comparte tu perfil público para que otros vean tu progreso y te contacten para intercambiar.',
     position: 'bottom',
     setup: () => {
       // Volver al tab álbum

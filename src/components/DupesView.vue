@@ -67,7 +67,7 @@ const hasShowable = computed(() =>
 );
 
 function copyDupes() {
-  const lines: string[] = [`Tengo ${stats.value.dupes} láminas repetidas para cambiar:`];
+  const lines: string[] = [`Tengo ${stats.value.dupes} láminas repetidas para intercambiar:`];
   const bySection = new Map<string, { code: string; count: number }[]>();
   for (const d of dupesList.value) {
     if (d.count <= 0) continue; // items grisados (bajaron a 0 en sesión): no copiar
@@ -76,12 +76,12 @@ function copyDupes() {
   }
   for (const [section, items] of bySection) {
     lines.push(
-      `\n${section}: ${items
+      `${section}: ${items
         .map((i) => (i.count > 1 ? `${i.code} (+${i.count})` : i.code))
         .join(', ')}`,
     );
   }
-  const text = lines.join('\n');
+  const text = lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/';
   navigator.clipboard?.writeText(text).then(
     () => emit('copied', '¡Lista copiada al portapapeles!'),
     () => alert('No se pudo copiar. Selecciona manualmente.'),
@@ -94,7 +94,7 @@ function copyDupes() {
     <div class="list-head">
       <div class="list-head-text">
         <h2>TIENES {{ stats.dupes }} REPETIDAS</h2>
-        <p>Listas para cambiar. Toca una para editar cantidad o notas.</p>
+        <p>Listas para intercambiar. Toca una para editar cantidad o notas.</p>
       </div>
       <button v-if="dupesList.length > 0" class="copy-btn" @click="copyDupes">
         <svg
@@ -141,7 +141,7 @@ function copyDupes() {
       </div>
       <div class="empty-title">NO TIENES REPETIDAS</div>
       <div class="empty-sub">
-        Cuando marques cantidades en el álbum aparecerán aquí, listas para cambiar.
+        Cuando marques cantidades en el álbum aparecerán aquí, listas para intercambiar.
       </div>
     </div>
     <div v-else class="dupes-list">
