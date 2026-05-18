@@ -108,17 +108,17 @@ const recommendation = computed(() => {
     if (sim.value.newFromTrade > 0) {
       return {
         level: 'green',
-        text: `Esas ${sim.value.newFromTrade} nuevas te salen gratis: solo estás cambiando repetidas.`,
+        text: `${sim.value.newFromTrade} nuevas gratis solo intercambiando repetidas.`,
       };
     }
     return {
       level: 'neutral',
-      text: 'Sin sobres y sin cambios no hay nuevas. Mueve los controles para simular.',
+      text: 'Sin sobres ni intercambios no hay nuevas.',
     };
   }
   const cpn = sim.value.costPerNewReal;
   if (cpn === Infinity || cpn === 0) {
-    return { level: 'neutral', text: 'Ajusta los valores arriba para ver la comparación.' };
+    return { level: 'neutral', text: 'Sin sobres ni intercambios no hay nuevas.' };
   }
   // "Parejo" solo cuando la diferencia ABSOLUTA es chica (< 100 en la moneda).
   // Usar ratio engaña: $653 sobre vs $1000 suelta es ratio 0.65 pero la diferencia
@@ -139,7 +139,7 @@ const recommendation = computed(() => {
   }
   return {
     level: 'red',
-    text: `Conviene comprar sueltas: ${formatCLP(mlPrice.value)} vs ${formatCLP(cpn)} del sobre.`,
+    text: `Mejor sueltas: ${formatCLP(mlPrice.value)} vs ${formatCLP(cpn)} por sobre.`,
   };
 });
 
@@ -224,29 +224,28 @@ function formatCLP(n: number): string {
       </div>
 
       <div v-if="K < N" class="calc-expectation">
-        Cada sobre nuevo te da, en promedio,
-        <span class="calc-expectation-val">{{ expectedNewPerPack.toFixed(1) }}</span>
-        láminas nuevas
-        <span class="calc-expectation-pct">({{ newPercentagePerPack }}% del sobre)</span>.
+        ~<span class="calc-expectation-val">{{
+          expectedNewPerPack.toFixed(2).replace('.', ',')
+        }}</span>
+        nuevas por sobre
+        <span class="calc-expectation-pct">({{ newPercentagePerPack }}%)</span>
       </div>
 
-      <div class="calc-funfact">
-        Llenar todo solo con sobres necesitaría ~{{ totalFromZero }} en promedio.
-      </div>
+      <div class="calc-funfact">Completar solo con sobres: ~{{ totalFromZero }}</div>
     </div>
 
     <!-- Simulador -->
     <div class="calc-card">
-      <div class="calc-label">SIMULADOR</div>
+      <div class="calc-label">¿SOBRE O SUELTA?</div>
 
       <div class="calc-input-row">
-        <label class="calc-input-label">Sobres extra</label>
+        <label class="calc-input-label">Comprar sobres</label>
         <div class="calc-slider-row">
           <input
             v-model.number="extraPacks"
             type="range"
             min="0"
-            max="500"
+            max="300"
             step="5"
             class="calc-range"
           />
@@ -255,7 +254,7 @@ function formatCLP(n: number): string {
       </div>
 
       <div class="calc-input-row">
-        <label class="calc-input-label">Personas con las que cambias: {{ tradePeople }}</label>
+        <label class="calc-input-label">Intercambias con: {{ tradePeople }} personas</label>
         <div class="calc-slider-row">
           <input
             v-model.number="tradePeople"
@@ -283,19 +282,19 @@ function formatCLP(n: number): string {
       <div class="calc-results">
         <div class="calc-result">
           <span class="calc-result-val">{{ sim.newDirect }}</span> nuevas
-          <span v-if="extraPacks > 0">y {{ sim.dupesGenerated }} repetidas</span>
-          de los sobres
+          <span v-if="extraPacks > 0">+ {{ sim.dupesGenerated }} repetidas</span>
+          de sobres
           <span v-if="extraPacks > 0" class="calc-result-hint">
             ({{ newPctFromPacks }}% nuevas)
           </span>
         </div>
         <div v-if="sim.newFromTrade > 0" class="calc-result">
           <span class="calc-result-val calc-result-trade">+{{ sim.newFromTrade }}</span>
-          nuevas cambiando repetidas
+          nuevas por intercambio
         </div>
         <div v-if="sim.newFromTrade > 0 && tradePeople > 0" class="calc-result calc-result-sub">
           ~<span class="calc-result-val">{{ tradesPerPerson }}</span>
-          por persona en promedio.
+          por persona
         </div>
         <div class="calc-result">
           Total: <span class="calc-result-val">{{ sim.totalFinal }}</span>
@@ -306,21 +305,21 @@ function formatCLP(n: number): string {
           <div class="calc-divider" />
 
           <div class="calc-result">
-            Gastas <span class="calc-result-val">{{ formatCLP(sim.totalCost) }}</span> en sobres
+            Gasto: <span class="calc-result-val">{{ formatCLP(sim.totalCost) }}</span>
           </div>
           <div v-if="sim.newTotal > 0" class="calc-result">
-            Costo por lámina nueva:
+            Costo/nueva:
             <span class="calc-result-val">{{
               formatCLP(tradePeople > 0 ? sim.costPerNewReal : sim.costPerNewNaive)
             }}</span>
             <span v-if="tradePeople > 0 && sim.newDirect > 0" class="calc-result-hint">
-              (sin cambiar repetidas: {{ formatCLP(sim.costPerNewNaive) }})
+              (solo sobres: {{ formatCLP(sim.costPerNewNaive) }})
             </span>
           </div>
         </template>
 
         <div v-if="sim.dupesDead > 0" class="calc-result calc-result-dead">
-          ~{{ sim.dupesDead }} repetidas quedarían sin cambiar.
+          ~{{ sim.dupesDead }} repetidas sin intercambiar
         </div>
       </div>
 
@@ -441,8 +440,8 @@ function formatCLP(n: number): string {
         <p>
           <strong>Nuevas por cambio:</strong><br />
           nuevas_cambio = mín(R · τ · ρ, faltantes restantes)<br />
-          R = repetidas totales, τ = qué fracción logras cambiar (sube con más contactos), ρ = 0,8
-          (de cada repetida cambiada, el 80% termina siendo nueva para ti).
+          R = repetidas totales, τ = qué fracción logras intercambiar (sube con más contactos), ρ =
+          0,8 (de cada repetida cambiada, el 80% termina siendo nueva para ti).
         </p>
         <p>
           <strong>Costo por lámina nueva:</strong><br />
