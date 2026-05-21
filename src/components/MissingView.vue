@@ -83,7 +83,7 @@ function copyMissing() {
   if (bonusMissing.value.length > 0) {
     for (const group of bonusMissing.value) {
       lines.push(
-        `🥤 Extra — ${group.section.name}: ${group.items.map((n: number) => codeForSticker(n)).join(', ')}`,
+        `🥤 Bonus — ${group.section.name}: ${group.items.map((n: number) => codeForSticker(n)).join(', ')}`,
       );
     }
   }
@@ -211,7 +211,7 @@ function copyMissing() {
           <div class="list-group-head-left">
             <span class="list-group-flag" aria-hidden="true">🥤</span>
             <span class="list-group-title"
-              >Extra — {{ group.section.name }} ({{ group.items.length }})</span
+              >Bonus — {{ group.section.name }} ({{ group.items.length }})</span
             >
           </div>
           <div class="list-group-head-right">

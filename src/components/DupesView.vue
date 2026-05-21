@@ -105,7 +105,7 @@ function copyDupes() {
     const bonusCodes = bonusDupesList.value
       .map((d) => (d.count > 1 ? `${codeForSticker(d.num)} (+${d.count})` : codeForSticker(d.num)))
       .join(', ');
-    lines.push(`🥤 Extra — Coca-Cola: ${bonusCodes}`);
+    lines.push(`🥤 Bonus — Coca-Cola: ${bonusCodes}`);
   }
   const text = lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/';
   navigator.clipboard?.writeText(text).then(

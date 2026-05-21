@@ -254,7 +254,7 @@ function copyMissing() {
   if (bonusMissingBySection.value.length > 0) {
     for (const g of bonusMissingBySection.value) {
       lines.push(
-        `🥤 Extra — ${g.section.name}: ${g.items.map((n) => codeForSticker(n)).join(', ')}`,
+        `🥤 Bonus — ${g.section.name}: ${g.items.map((n) => codeForSticker(n)).join(', ')}`,
       );
     }
   }
@@ -280,7 +280,7 @@ function copyDupes() {
   if (bonusDupesBySection.value.length > 0) {
     for (const g of bonusDupesBySection.value) {
       lines.push(
-        `🥤 Extra — ${g.section}: ${g.items
+        `🥤 Bonus — ${g.section}: ${g.items
           .map((i) => (i.count > 1 ? `${i.code} (+${i.count})` : i.code))
           .join(', ')}`,
       );
