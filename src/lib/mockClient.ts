@@ -308,5 +308,6 @@ export function createMockClient() {
   return {
     auth: mockAuth,
     from: (table: string) => new MockQueryBuilder(table),
+    rpc: () => Promise.resolve({ data: null, error: null }),
   };
 }

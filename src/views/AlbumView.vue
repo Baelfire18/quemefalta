@@ -28,6 +28,8 @@ import { matchesSection } from '@/lib/searchSections';
 import StickerScanner from '@/components/StickerScanner.vue';
 import CsvModal from '@/components/CsvModal.vue';
 import WhatsAppModal from '@/components/WhatsAppModal.vue';
+import CelebrationModal from '@/components/CelebrationModal.vue';
+import celebrationSfx from '@/assets/celebration.mp3';
 import UndoToast from '@/components/UndoToast.vue';
 import OnboardingGuide from '@/components/OnboardingGuide.vue';
 
@@ -121,6 +123,7 @@ const showBatchRemove = ref(false);
 const showScanner = ref(false);
 const showCsvModal = ref(false);
 const showWhatsAppModal = ref(false);
+const showCelebration = ref(false);
 const showProfileMenu = ref(false);
 const showLoginPrompt = ref(false);
 const showPagesPopover = ref(false);
@@ -183,6 +186,18 @@ watch(
   ([isLoaded, ownedCount]) => {
     if (isLoaded && ownedCount === 0 && !localStorage.getItem('quemefalta_onboarding_done')) {
       showOnboarding.value = true;
+    }
+  },
+  { immediate: true },
+);
+
+// Celebración al completar el álbum (980/980)
+watch(
+  () => stats.value.missing,
+  (missing) => {
+    if (missing === 0 && stats.value.owned > 0) {
+      showCelebration.value = true;
+      new Audio(celebrationSfx).play().catch(() => {});
     }
   },
   { immediate: true },
@@ -882,6 +897,7 @@ const userInitial = computed(() => {
     <StickerScanner v-if="showScanner" @add="handleScannerAdd" @close="showScanner = false" />
     <CsvModal v-if="showCsvModal" @close="showCsvModal = false" @imported="showCsvModal = false" />
     <WhatsAppModal v-if="showWhatsAppModal" @close="showWhatsAppModal = false" />
+    <CelebrationModal v-if="showCelebration" @close="showCelebration = false" />
 
     <!-- LONG-PRESS TIP -->
     <Transition name="tip">
