@@ -133,7 +133,14 @@ describe('useExchange', () => {
         },
         error: null,
       },
-      public_user_stickers: { data: [], error: null },
+      public_user_stickers: {
+        data: Array.from({ length: 490 }, (_, i) => ({
+          sticker_number: i + 1,
+          owned: true,
+          dupes: i < 25 ? 1 : 0,
+        })),
+        error: null,
+      },
     });
 
     const userA = ref('alice');

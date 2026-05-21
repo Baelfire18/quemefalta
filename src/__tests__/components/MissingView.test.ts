@@ -65,9 +65,9 @@ describe('MissingView', () => {
 
   it('shows sections with missing stickers', () => {
     const w = mount(MissingView);
-    // With 0 stickers owned, all 49 sections should show
+    // With 0 stickers owned, all 50 sections should show (49 main + 1 bonus)
     const groups = w.findAll('.list-group');
-    expect(groups.length).toBe(49);
+    expect(groups.length).toBe(50);
   });
 
   it('shows copy button when stickers are missing', () => {

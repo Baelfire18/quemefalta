@@ -89,12 +89,24 @@ const stats = computed(() => {
   if (!profile.value) {
     return { pct: 0, owned: 0, missing: 0, dupes: 0, completedSections: 0 };
   }
-  const owned = profile.value.owned_count;
+  // Recalcular desde stickerMap excluyendo bonus (>980) para no inflar el total
+  let owned = 0;
+  let dupes = 0;
+  for (const [num, s] of stickerMap.value) {
+    if (num > TOTAL_STICKERS) continue;
+    if (s.owned) owned++;
+    if (s.owned && s.dupes > 0) dupes += s.dupes;
+  }
+  // Fallback al profile count si el stickerMap aún no cargó
+  if (stickerMap.value.size === 0 && profile.value.owned_count > 0) {
+    owned = profile.value.owned_count;
+    dupes = profile.value.dupes_count;
+  }
   return {
     pct: Math.round((owned / TOTAL_STICKERS) * 100 * 10) / 10,
     owned,
     missing: TOTAL_STICKERS - owned,
-    dupes: profile.value.dupes_count,
+    dupes,
     completedSections: completedSectionNames.value.length,
   };
 });

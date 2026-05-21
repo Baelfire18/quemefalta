@@ -25,26 +25,30 @@ export function useExchange(usernameA: Ref<string>, usernameB: Ref<string>) {
     return computeExchange(stickerMapA.value, stickerMapB.value);
   });
 
-  const statsA = computed(() => {
-    if (!profileA.value) return null;
-    const owned = profileA.value.owned_count;
+  function mainStats(map: StickerMap) {
+    let owned = 0;
+    let dupes = 0;
+    for (const [num, s] of map) {
+      if (num > TOTAL_STICKERS) continue;
+      if (s.owned) owned++;
+      if (s.owned && s.dupes > 0) dupes += s.dupes;
+    }
     return {
       pct: Math.min(100, Math.round((owned / TOTAL_STICKERS) * 100 * 10) / 10),
       owned,
       missing: TOTAL_STICKERS - owned,
-      dupes: profileA.value.dupes_count,
+      dupes,
     };
+  }
+
+  const statsA = computed(() => {
+    if (!profileA.value) return null;
+    return mainStats(stickerMapA.value);
   });
 
   const statsB = computed(() => {
     if (!profileB.value) return null;
-    const owned = profileB.value.owned_count;
-    return {
-      pct: Math.min(100, Math.round((owned / TOTAL_STICKERS) * 100 * 10) / 10),
-      owned,
-      missing: TOTAL_STICKERS - owned,
-      dupes: profileB.value.dupes_count,
-    };
+    return mainStats(stickerMapB.value);
   });
 
   async function fetchProfile(username: string): Promise<PublicProfile | null> {
