@@ -57,6 +57,7 @@ AlbumView.vue ─── Vista principal, orquesta todo
 │       └── StickerCard.vue ← Card individual (tap=detalle, +/− abajo para marcar)
 │           ├── variant: crest (lámina 1, escudo con ball-crest.jpg)
 │           ├── variant: squad (lámina 13, horizontal con field-squad.jpg)
+│           ├── variant: bonus (Coca-Cola, coca-cola-bonus.jpg + SFX lata 3s)
 │           └── variant: normal (resto, ball-stadium.png)
 ├── MissingView.vue ← Tab "Faltan" con búsqueda + filtros, agrupado, copiar
 ├── DupesView.vue ← Tab "Repetidas" con búsqueda + stepper inline +/− por lámina
@@ -69,7 +70,7 @@ AlbumView.vue ─── Vista principal, orquesta todo
 ├── ShareModal.vue ← Compartir perfil propio (Web Share + redes + QR)
 ├── QrModal.vue ← QR full-screen del perfil público (mostrar en persona)
 ├── WhatsAppModal.vue ← Editar profile.phone (visible solo a authenticated)
-├── CsvModal.vue ← Export/import CSV grilla 49×20
+├── CsvModal.vue ← Export/import CSV grilla 49×20 (+14 bonus)
 ├── OnboardingGuide.vue ← Tutorial de 11 pasos con spotlight
 ├── ConfirmDialog.vue ← Diálogo de confirmación genérico
 └── UndoToast.vue ← Toast con undo
@@ -116,6 +117,14 @@ Si el error es **permanente** (refresh token revocado), `sessionDead = true` y a
 - Lámina 13 de cada equipo → variant `squad` (selección, 2 columnas, imagen campo)
 - Solo aplica a secciones de equipo (`isTeam`), no a FWC intro (que tiene su propio layout fwc-h / fwc-v)
 
+### Sección bonus Coca-Cola (CC1–CC14)
+- 14 láminas extra, `isBonus: true`, sticker numbers 981–994, código `CC`
+- **No cuentan en el porcentaje principal** — stats separados (`bonusOwned`, `bonusMissing`, `bonusDupes`)
+- Variant `bonus` en StickerCard: imagen `coca-cola-bonus.jpg`, sonido de lata al tocar (3s max)
+- Nombres de jugadores en `cocaColaPlayers.ts`, se muestran en el footer de la card con bandera
+- En Faltantes/Repetidas aparecen inline con label "🥤 Extra — Coca-Cola", sin toggle
+- En AlbumAccordion se renderizan aparte con pill `BONUS`
+
 ### Convención de repetidas
 Mostrar **`+N` con N = solo extras**, sin contar la propia (`dupes` en BD = "repetidas extra"). En textos de copy al portapapeles **se omite `(+1)`** porque `+1` es el mínimo y satura visualmente — solo se muestra `(+N)` cuando `dupes ≥ 2`.
 
@@ -133,7 +142,7 @@ Vista en `/cambios`: dos secciones — **Cambio mutuo** (su `their_dupes_for_me 
 
 | Archivo | Qué es |
 |---|---|
-| `src/lib/albumData.ts` | 49 secciones (intro + 48 equipos), 980 stickers, `codeForSticker`, `sectionForSticker`, `stickerNumberFromCode`. Helpers de páginas: `isSectionComplete`, `completedSectionsCount`, `completedTeamsInGroup`, const `TOTAL_SECTIONS` |
+| `src/lib/albumData.ts` | 50 secciones (intro + 48 equipos + 1 bonus), 994 stickers. `MAIN_SECTIONS` (49), `BONUS_SECTIONS` (1), `TOTAL_STICKERS` (980), `BONUS_STICKERS` (14), `TOTAL_WITH_BONUS` (994). `codeForSticker`, `sectionForSticker`, `stickerNumberFromCode`, `isSectionComplete`, `completedSectionsCount`, `completedTeamsInGroup`, `TOTAL_SECTIONS` |
 | `src/lib/progressColors.ts` | Escala de 7 colores por porcentaje: rojo → ámbar → naranja → amarillo → lima → mint → verde brillante |
 | `src/lib/teamFlagEmoji.ts` | FIFA code → emoji de bandera (con overrides para ENG/SCO) |
 | `src/lib/supabase.ts` | Cliente Supabase + session resilience: `withAuthRetry`, `ensureFreshSession`, `tryRescueSession`, `reestablishConnection`, `refreshInProgress` |
@@ -141,7 +150,8 @@ Vista en `/cambios`: dos secciones — **Cambio mutuo** (su `their_dupes_for_me 
 | `src/lib/canvasUtils.ts` | `preprocessImage()` — grayscale, Otsu binarize, scale 2x para OCR |
 | `src/lib/fwcConfig.ts` | Config de layout FWC intro (variantes h/v, imágenes por sticker) |
 | `src/lib/calcUtils.ts` | Calculadora de sobres: `expectedNew`, `simulateWithTrade`, `projectionTable`, `projectionCurves` |
-| `src/lib/csvUtils.ts` | Export/import CSV grilla 49×20: `generateCsv`, `parseCsv` |
+| `src/lib/csvUtils.ts` | Export/import CSV grilla 49×20 (+bonus): `generateCsv`, `parseCsv` |
+| `src/lib/cocaColaPlayers.ts` | Datos de los 14 jugadores Coca-Cola (nombre + código FIFA del país) |
 | `src/lib/exchangeUtils.ts` | Algoritmo de intercambio: `computeExchange`, `formatExchangeList` — lógica pura, sin Vue |
 | `src/lib/searchSections.ts` | `normalizeStr` (lowercase + sin acentos) + `matchesSection(section, query)` — match por nombre o código FIFA |
 | `src/lib/analytics.ts` | Wrapper sobre `@vercel/analytics` con no-op en mock mode + try/catch defensivo |
@@ -171,7 +181,7 @@ Los archivos en `supabase/migrations/` **no se aplican solos** — copiar el SQL
 
 ## Convenciones
 
-- **Stickers**: número (1-980) y código (`FWC1`, `MEX1`, `ARG5`). Siempre usar `codeForSticker(n)` para mostrar.
+- **Stickers**: número (1-994) y código (`FWC1`, `MEX1`, `ARG5`, `CC1`). Siempre usar `codeForSticker(n)` para mostrar. Bonus: 981-994.
 - **Repetidas**: `dupes` en BD = extras sin contar la propia. UI muestra `+N`. Copy text omite `(+1)`.
 - **Commits**: Gitmoji. **No agregar `Co-Authored-By` de Claude.** El hook PreToolUse corre `npm run lint` antes y bloquea si quedan errores.
 - **Escrituras DB**: Siempre `ensureFreshSession()` + `withAuthRetry()` para reads/writes single-row. Bulk usa `withAuthRetry` directo y cae a `enqueueOp` por fila si falla.
