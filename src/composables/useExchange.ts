@@ -29,7 +29,7 @@ export function useExchange(usernameA: Ref<string>, usernameB: Ref<string>) {
     if (!profileA.value) return null;
     const owned = profileA.value.owned_count;
     return {
-      pct: Math.round((owned / TOTAL_STICKERS) * 100 * 10) / 10,
+      pct: Math.min(100, Math.round((owned / TOTAL_STICKERS) * 100 * 10) / 10),
       owned,
       missing: TOTAL_STICKERS - owned,
       dupes: profileA.value.dupes_count,
@@ -40,7 +40,7 @@ export function useExchange(usernameA: Ref<string>, usernameB: Ref<string>) {
     if (!profileB.value) return null;
     const owned = profileB.value.owned_count;
     return {
-      pct: Math.round((owned / TOTAL_STICKERS) * 100 * 10) / 10,
+      pct: Math.min(100, Math.round((owned / TOTAL_STICKERS) * 100 * 10) / 10),
       owned,
       missing: TOTAL_STICKERS - owned,
       dupes: profileB.value.dupes_count,

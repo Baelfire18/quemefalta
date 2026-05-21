@@ -35,21 +35,30 @@ const router = createRouter({
       path: '/u/:username',
       name: 'public-profile',
       component: () => import('@/views/PublicProfileView.vue'),
-      meta: { isPublic: true },
+      meta: { isPublic: true, forceReload: true },
     },
     {
       path: '/intercambio/:userA/:userB',
       name: 'exchange',
       component: () => import('@/views/ExchangeView.vue'),
-      meta: { isPublic: true },
+      meta: { isPublic: true, forceReload: true },
     },
     {
       path: '/cambios',
       name: 'trade-matches',
       component: () => import('@/views/TradeMatchesView.vue'),
-      meta: { requiresOnboarded: true },
+      meta: { requiresOnboarded: true, forceReload: true },
     },
   ],
+});
+
+// Forzar full-page reload en rutas marcadas con forceReload
+// para que session, stickers y profile se re-hidraten desde cero.
+router.beforeEach((to, from) => {
+  if (to.meta.forceReload && from.name) {
+    window.location.href = to.fullPath;
+    return false;
+  }
 });
 
 router.beforeEach(async (to) => {

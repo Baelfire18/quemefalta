@@ -7,6 +7,7 @@ import { tryRescueSession } from '@/lib/supabase';
 import { useMeta } from '@/composables/useMeta';
 import {
   ALBUM_SECTIONS,
+  MAIN_SECTIONS,
   TOTAL_STICKERS,
   TOTAL_SECTIONS,
   sectionForSticker,
@@ -77,7 +78,7 @@ const view = ref(initialView);
 // Formato: equipos prefijados con su grupo "(A) México"; FWC sin prefijo.
 const completedSectionNames = computed(() => {
   const labels: string[] = [];
-  for (const sec of ALBUM_SECTIONS) {
+  for (const sec of MAIN_SECTIONS) {
     let done = true;
     for (let i = 0; i < sec.count; i++) {
       if (!stickers.value[sec.startsAt + i]?.owned) {
