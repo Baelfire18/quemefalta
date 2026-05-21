@@ -4,7 +4,13 @@ import { useRoute, useRouter } from 'vue-router';
 import { supabase, withAuthRetry, reestablishConnection } from '@/lib/supabase';
 import { useAuth } from '@/composables/useAuth';
 import { useShare } from '@/composables/useShare';
-import { TOTAL_STICKERS, TOTAL_SECTIONS, ALBUM_SECTIONS, codeForSticker } from '@/lib/albumData';
+import {
+  TOTAL_STICKERS,
+  TOTAL_SECTIONS,
+  MAIN_SECTIONS,
+  BONUS_SECTIONS,
+  codeForSticker,
+} from '@/lib/albumData';
 import { useMeta } from '@/composables/useMeta';
 import { track } from '@/lib/analytics';
 import QrModal from '@/components/QrModal.vue';
@@ -61,7 +67,7 @@ const isOwnProfile = computed(() => {
 const completedSectionNames = computed(() => {
   if (stickerMap.value.size === 0) return [] as string[];
   const labels: string[] = [];
-  for (const sec of ALBUM_SECTIONS) {
+  for (const sec of MAIN_SECTIONS) {
     let done = true;
     for (let i = 0; i < sec.count; i++) {
       if (!stickerMap.value.get(sec.startsAt + i)?.owned) {
@@ -132,7 +138,7 @@ const userInitial = computed(() => {
 
 const missingBySection = computed(() => {
   if (stickerMap.value.size === 0 && stats.value.owned === 0) return [];
-  return ALBUM_SECTIONS.map((sec) => {
+  return MAIN_SECTIONS.map((sec) => {
     const items: number[] = [];
     for (let i = 0; i < sec.count; i++) {
       const num = sec.startsAt + i;
@@ -144,7 +150,34 @@ const missingBySection = computed(() => {
 
 const dupesBySection = computed(() => {
   const groups = new Map<string, { section: string; items: { code: string; count: number }[] }>();
-  for (const sec of ALBUM_SECTIONS) {
+  for (const sec of MAIN_SECTIONS) {
+    for (let i = 0; i < sec.count; i++) {
+      const num = sec.startsAt + i;
+      const s = stickerMap.value.get(num);
+      if (s?.owned && s.dupes > 0) {
+        if (!groups.has(sec.id)) groups.set(sec.id, { section: sec.name, items: [] });
+        groups.get(sec.id)!.items.push({ code: codeForSticker(num), count: s.dupes });
+      }
+    }
+  }
+  return [...groups.values()];
+});
+
+const bonusMissingBySection = computed(() => {
+  if (stickerMap.value.size === 0 && stats.value.owned === 0) return [];
+  return BONUS_SECTIONS.map((sec) => {
+    const items: number[] = [];
+    for (let i = 0; i < sec.count; i++) {
+      const num = sec.startsAt + i;
+      if (!stickerMap.value.get(num)?.owned) items.push(num);
+    }
+    return { section: sec, items };
+  }).filter((g) => g.items.length > 0);
+});
+
+const bonusDupesBySection = computed(() => {
+  const groups = new Map<string, { section: string; items: { code: string; count: number }[] }>();
+  for (const sec of BONUS_SECTIONS) {
     for (let i = 0; i < sec.count; i++) {
       const num = sec.startsAt + i;
       const s = stickerMap.value.get(num);
@@ -202,9 +235,16 @@ async function shareProfile() {
 }
 
 function copyMissing() {
-  const lines = [`A ${displayName.value} le faltan ${stats.value.missing} láminas:`];
+  const lines = [`A ${displayName.value} le faltan estas láminas:`];
   for (const g of missingBySection.value) {
     lines.push(`${g.section.name}: ${g.items.map((n) => codeForSticker(n)).join(', ')}`);
+  }
+  if (bonusMissingBySection.value.length > 0) {
+    for (const g of bonusMissingBySection.value) {
+      lines.push(
+        `🥤 Extra — ${g.section.name}: ${g.items.map((n) => codeForSticker(n)).join(', ')}`,
+      );
+    }
   }
   navigator.clipboard
     ?.writeText(lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/')
@@ -217,13 +257,22 @@ function copyMissing() {
 }
 
 function copyDupes() {
-  const lines = [`${displayName.value} tiene ${stats.value.dupes} repetidas para intercambiar:`];
+  const lines = [`${displayName.value} tiene estas repetidas para intercambiar:`];
   for (const g of dupesBySection.value) {
     lines.push(
       `${g.section}: ${g.items
         .map((i) => (i.count > 1 ? `${i.code} (+${i.count})` : i.code))
         .join(', ')}`,
     );
+  }
+  if (bonusDupesBySection.value.length > 0) {
+    for (const g of bonusDupesBySection.value) {
+      lines.push(
+        `🥤 Extra — ${g.section}: ${g.items
+          .map((i) => (i.count > 1 ? `${i.code} (+${i.count})` : i.code))
+          .join(', ')}`,
+      );
+    }
   }
   navigator.clipboard
     ?.writeText(lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/')

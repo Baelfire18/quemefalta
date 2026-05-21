@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { ALBUM_SECTIONS, codeForSticker } from '@/lib/albumData';
+import { MAIN_SECTIONS, BONUS_SECTIONS, codeForSticker } from '@/lib/albumData';
 import { useStickers } from '@/composables/useStickers';
 import SectionSearch from '@/components/SectionSearch.vue';
 import { matchesSection, matchesStickerCode } from '@/lib/searchSections';
@@ -42,7 +42,7 @@ watch(
 const dupesList = computed(() => {
   const out: { num: number; section: string; sectionId: string; count: number; note: string }[] =
     [];
-  for (const sec of ALBUM_SECTIONS) {
+  for (const sec of MAIN_SECTIONS) {
     if (!matchesSection(sec, searchQuery.value)) continue;
     for (let i = 0; i < sec.count; i++) {
       const num = sec.startsAt + i;
@@ -66,11 +66,31 @@ const hasShowable = computed(() =>
   showAllOwned.value ? stats.value.owned > 0 : visibleSet.value.size > 0,
 );
 
+const bonusDupesList = computed(() => {
+  const out: { num: number; section: string; sectionId: string; count: number; note: string }[] =
+    [];
+  for (const sec of BONUS_SECTIONS) {
+    for (let i = 0; i < sec.count; i++) {
+      const num = sec.startsAt + i;
+      const s = stickers.value[num];
+      if (!s?.owned || s.dupes <= 0) continue;
+      out.push({
+        num,
+        section: sec.name,
+        sectionId: sec.id,
+        count: s.dupes,
+        note: s?.note ?? '',
+      });
+    }
+  }
+  return out;
+});
+
 function copyDupes() {
-  const lines: string[] = [`Tengo ${stats.value.dupes} láminas repetidas para intercambiar:`];
+  const lines: string[] = ['Tengo estas láminas repetidas para intercambiar:'];
   const bySection = new Map<string, { code: string; count: number }[]>();
   for (const d of dupesList.value) {
-    if (d.count <= 0) continue; // items grisados (bajaron a 0 en sesión): no copiar
+    if (d.count <= 0) continue;
     if (!bySection.has(d.section)) bySection.set(d.section, []);
     bySection.get(d.section)!.push({ code: codeForSticker(d.num), count: d.count });
   }
@@ -80,6 +100,12 @@ function copyDupes() {
         .map((i) => (i.count > 1 ? `${i.code} (+${i.count})` : i.code))
         .join(', ')}`,
     );
+  }
+  if (bonusDupesList.value.length > 0) {
+    const bonusCodes = bonusDupesList.value
+      .map((d) => (d.count > 1 ? `${codeForSticker(d.num)} (+${d.count})` : codeForSticker(d.num)))
+      .join(', ');
+    lines.push(`🥤 Extra — Coca-Cola: ${bonusCodes}`);
   }
   const text = lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/';
   navigator.clipboard?.writeText(text).then(
@@ -174,6 +200,44 @@ function copyDupes() {
               </svg>
               {{ d.note }}
             </div>
+          </div>
+        </button>
+        <div
+          class="dupe-stepper"
+          role="group"
+          :aria-label="`Ajustar repetidas de ${codeForSticker(d.num)}`"
+        >
+          <button
+            type="button"
+            class="dupe-step-btn"
+            :disabled="d.count <= 0"
+            aria-label="Quitar una repetida"
+            @click.stop="adjustDupes(d.num, -1)"
+          >
+            −
+          </button>
+          <span class="dupe-count">+{{ d.count }}</span>
+          <button
+            type="button"
+            class="dupe-step-btn"
+            aria-label="Agregar una repetida"
+            @click.stop="adjustDupes(d.num, 1)"
+          >
+            +
+          </button>
+        </div>
+      </div>
+      <!-- Bonus dupes (inline con el resto) -->
+      <div v-for="d in bonusDupesList" :key="d.num" class="dupe-item">
+        <button
+          type="button"
+          class="dupe-main-btn"
+          :aria-label="`Editar ${codeForSticker(d.num)}`"
+          @click="emit('openDetail', d.num)"
+        >
+          <div class="dupe-num">{{ codeForSticker(d.num) }}</div>
+          <div class="dupe-info">
+            <div class="dupe-section">🥤 {{ d.section }}</div>
           </div>
         </button>
         <div

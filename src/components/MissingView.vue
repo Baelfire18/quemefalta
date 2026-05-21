@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { ALBUM_SECTIONS, TOTAL_STICKERS, codeForSticker } from '@/lib/albumData';
+import { MAIN_SECTIONS, BONUS_SECTIONS, TOTAL_STICKERS, codeForSticker } from '@/lib/albumData';
 import { pctColor } from '@/lib/progressColors';
 import { teamFlagEmoji } from '@/lib/teamFlagEmoji';
 import { useStickers } from '@/composables/useStickers';
@@ -27,7 +27,7 @@ function toggleCollapse(sectionId: string) {
 }
 
 const missingBySection = computed(() => {
-  let sections = ALBUM_SECTIONS.map((sec) => {
+  let sections = MAIN_SECTIONS.map((sec) => {
     const items: number[] = [];
     for (let i = 0; i < sec.count; i++) {
       const num = sec.startsAt + i;
@@ -62,12 +62,30 @@ const missingBySection = computed(() => {
   return sections;
 });
 
+const bonusMissing = computed(() => {
+  return BONUS_SECTIONS.map((sec) => {
+    const items: number[] = [];
+    for (let i = 0; i < sec.count; i++) {
+      const num = sec.startsAt + i;
+      if (!stickers.value[num]?.owned) items.push(num);
+    }
+    return { section: sec, items, pctOwned: ((sec.count - items.length) / sec.count) * 100 };
+  }).filter((g) => g.items.length > 0);
+});
+
 function copyMissing() {
-  const lines: string[] = [`Me faltan ${stats.value.missing} láminas del álbum:`];
+  const lines: string[] = ['Me faltan estas láminas del álbum:'];
   for (const group of missingBySection.value) {
     lines.push(
       `${group.section.name}: ${group.items.map((n: number) => codeForSticker(n)).join(', ')}`,
     );
+  }
+  if (bonusMissing.value.length > 0) {
+    for (const group of bonusMissing.value) {
+      lines.push(
+        `🥤 Extra — ${group.section.name}: ${group.items.map((n: number) => codeForSticker(n)).join(', ')}`,
+      );
+    }
   }
   const text = lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/';
   navigator.clipboard?.writeText(text).then(
@@ -160,6 +178,41 @@ function copyMissing() {
               >{{ group.section.name }} ({{ group.items.length }})</span
             >
             <span v-if="group.pctOwned >= 90" class="almost-badge">¡Casi!</span>
+          </div>
+          <div class="list-group-head-right">
+            <span class="list-group-pct" :style="{ color: pctColor(group.pctOwned) }"
+              >{{ Math.round(group.pctOwned) }}%</span
+            >
+            <span class="list-group-chevron">{{
+              collapsed.has(group.section.id) ? '▸' : '▾'
+            }}</span>
+          </div>
+        </div>
+        <div v-if="!collapsed.has(group.section.id)" class="list-numbers">
+          <button
+            v-for="num in group.items"
+            :key="num"
+            class="list-num"
+            @click="emit('jumpToSection', group.section.id)"
+          >
+            {{ codeForSticker(num) }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Bonus missing -->
+      <div v-for="group in bonusMissing" :key="group.section.id" class="list-group">
+        <div
+          class="list-group-head"
+          style="cursor: pointer"
+          :style="{ borderLeftColor: pctColor(group.pctOwned) }"
+          @click="toggleCollapse(group.section.id)"
+        >
+          <div class="list-group-head-left">
+            <span class="list-group-flag" aria-hidden="true">🥤</span>
+            <span class="list-group-title"
+              >Extra — {{ group.section.name }} ({{ group.items.length }})</span
+            >
           </div>
           <div class="list-group-head-right">
             <span class="list-group-pct" :style="{ color: pctColor(group.pctOwned) }"
