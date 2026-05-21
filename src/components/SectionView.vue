@@ -8,6 +8,8 @@ import type { AlbumSection } from '@/lib/albumData';
 import { teamFlagEmoji } from '@/lib/teamFlagEmoji';
 import { FWC_CODE, getFwcVariant } from '@/lib/fwcConfig';
 import { track } from '@/lib/analytics';
+import { COCA_COLA_PLAYERS } from '@/lib/cocaColaPlayers';
+import { teamFlagEmoji as flagEmoji } from '@/lib/teamFlagEmoji';
 
 const isPreview = inject<Ref<boolean>>('isPreview', ref(false));
 
@@ -41,18 +43,26 @@ const items = computed(() => {
   return Array.from({ length: props.section.count }, (_, i) => {
     const num = props.section.startsAt + i;
     const indexInSection = isZero ? i : i + 1;
-    let variant: 'normal' | 'crest' | 'squad' | 'fwc-h' | 'fwc-v' = 'normal';
-    if (isTeamSection.value) {
+    let variant: 'normal' | 'crest' | 'squad' | 'fwc-h' | 'fwc-v' | 'bonus' = 'normal';
+    if (props.section.isBonus) {
+      variant = 'bonus';
+    } else if (isTeamSection.value) {
       if (indexInSection === 1) variant = 'crest';
       else if (indexInSection === 13) variant = 'squad';
     } else if (isFwcSection.value) {
       variant = getFwcVariant(indexInSection);
     }
+    const code = `${props.section.code}${indexInSection}`;
+    const player = COCA_COLA_PLAYERS[code];
+    const playerName = player?.name
+      ? `${player.name}${player.country ? ` ${flagEmoji(player.country) || player.country}` : ''}`
+      : undefined;
     return {
       number: num,
-      code: `${props.section.code}${indexInSection}`,
+      code,
       state: getSticker(num),
       variant,
+      playerName,
     };
   });
 });
@@ -122,6 +132,7 @@ function confirmClear() {
           :code="item.code"
           :state="item.state"
           :variant="item.variant"
+          :player-name="item.playerName"
           :sync-status="getStickerSyncStatus(item.number)"
           @cycle="isPreview ? emit('openDetail', item.number) : cycleSticker(item.number)"
           @decrement="isPreview ? emit('openDetail', item.number) : decrementSticker(item.number)"

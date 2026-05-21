@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import SectionView from '@/components/SectionView.vue';
-import { ALBUM_SECTIONS } from '@/lib/albumData';
+import { ALBUM_SECTIONS, BONUS_SECTIONS } from '@/lib/albumData';
 import { barColor, pctColor } from '@/lib/progressColors';
 import { teamFlagEmoji } from '@/lib/teamFlagEmoji';
 import { useStickers } from '@/composables/useStickers';
@@ -59,6 +59,21 @@ const groupData = computed(() => {
   });
 });
 
+const bonusData = computed(() => {
+  return BONUS_SECTIONS.map((sec) => {
+    let owned = 0;
+    for (let i = 0; i < sec.count; i++) {
+      if (stickers.value[sec.startsAt + i]?.owned) owned++;
+    }
+    return {
+      ...sec,
+      owned,
+      complete: owned === sec.count,
+      pct: Math.round((owned / sec.count) * 100),
+    };
+  });
+});
+
 function toggleGroup(g: string) {
   if (expandedGroup.value === g) {
     expandedGroup.value = null;
@@ -87,7 +102,10 @@ function openSection(sectionId: string) {
     return;
   }
   const sec = ALBUM_SECTIONS.find((s) => s.id === sectionId);
-  if (sec?.group) {
+  if (sec?.isBonus) {
+    expandedGroup.value = null;
+    expandedTeam.value = sectionId;
+  } else if (sec?.group) {
     expandedGroup.value = sec.group;
     expandedTeam.value = sectionId;
   }
@@ -227,6 +245,33 @@ defineExpose({ openSection });
             />
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Bonus sections -->
+    <div v-for="bs in bonusData" :key="bs.id" class="acc-item acc-bonus-item">
+      <button
+        :class="['acc-team', { on: expandedTeam === bs.id, done: bs.complete }]"
+        @click="toggleTeam(bs.id)"
+      >
+        <span class="acc-team-flag">🥤</span>
+        <span class="acc-team-name">{{ bs.name }}</span>
+        <span class="acc-bonus-pill">BONUS</span>
+        <div class="acc-team-bar">
+          <div
+            class="acc-team-fill"
+            :style="{ width: `${bs.pct}%`, background: barColor(bs.pct, bs.complete) }"
+          />
+        </div>
+        <div class="acc-team-right">
+          <span class="acc-team-count" :class="{ 'acc-count-done': bs.complete }">
+            {{ bs.owned }}/{{ bs.count }}
+          </span>
+          <span class="acc-chevron">{{ expandedTeam === bs.id ? '▾' : '▸' }}</span>
+        </div>
+      </button>
+      <div v-if="expandedTeam === bs.id" class="acc-content">
+        <SectionView :section="bs" @open-detail="(n) => emit('openDetail', n)" />
       </div>
     </div>
   </div>
@@ -432,6 +477,25 @@ defineExpose({ openSection });
   flex-shrink: 0;
   width: 10px;
   text-align: center;
+}
+
+/* Bonus section */
+.acc-bonus-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.acc-bonus-pill {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(232, 179, 65, 0.12);
+  color: var(--gold);
+  flex-shrink: 0;
 }
 
 /* Sticker grid content area */

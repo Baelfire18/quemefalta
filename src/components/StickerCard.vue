@@ -4,15 +4,27 @@ import type { StickerState } from '@/composables/useStickers';
 import ballImg from '@/assets/ball-stadium.png';
 import crestImg from '@/assets/ball-crest.jpg';
 import squadImg from '@/assets/field-squad.jpg';
+import bonusImg from '@/assets/coca-cola-bonus.jpg';
+import cocaColaSfx from '@/assets/coca-cola-open.mp3';
 import { FWC_HORIZONTAL_IMG, FWC_VERTICAL_IMG, FWC_IMG_OVERRIDES } from '@/lib/fwcConfig';
+
+const COCA_COLA_SFX_DURATION = 3;
+const cocaColaAudio = new Audio(cocaColaSfx);
+cocaColaAudio.addEventListener('timeupdate', () => {
+  if (cocaColaAudio.currentTime >= COCA_COLA_SFX_DURATION) {
+    cocaColaAudio.pause();
+  }
+});
 
 const props = defineProps<{
   number: number;
   code: string;
   state: StickerState;
-  variant?: 'normal' | 'crest' | 'squad' | 'fwc-h' | 'fwc-v';
+  variant?: 'normal' | 'crest' | 'squad' | 'fwc-h' | 'fwc-v' | 'bonus';
   /** Estado de sync: 'pending' (reintentando), 'failed' (no se guardo), o null si OK. */
   syncStatus?: 'pending' | 'failed' | null;
+  /** Nombre del jugador (bonus Coca-Cola) */
+  playerName?: string;
 }>();
 
 const emit = defineEmits<{
@@ -39,6 +51,7 @@ const cardImg = computed(() => {
     if (override) return override;
     return isFwcH.value ? FWC_HORIZONTAL_IMG : FWC_VERTICAL_IMG;
   }
+  if (props.variant === 'bonus') return bonusImg;
   if (isCrest.value) return crestImg;
   if (isSquad.value) return squadImg;
   return ballImg;
@@ -73,6 +86,23 @@ watch(
   { deep: true },
 );
 const hasNote = computed(() => !!props.state.note);
+const isBonus = computed(() => props.variant === 'bonus');
+
+function handleCardClick() {
+  if (isBonus.value) {
+    cocaColaAudio.currentTime = 0;
+    cocaColaAudio.play().catch(() => {});
+  }
+  emit('openDetail');
+}
+
+function handleCycle() {
+  if (isBonus.value) {
+    cocaColaAudio.currentTime = 0;
+    cocaColaAudio.play().catch(() => {});
+  }
+  emit('cycle');
+}
 </script>
 
 <template>
@@ -90,7 +120,7 @@ const hasNote = computed(() => !!props.state.note);
         'stk-fwc-v': isFwcV,
       }"
       :aria-label="`Ver detalle de ${code}`"
-      @click="emit('openDetail')"
+      @click="handleCardClick"
       @contextmenu.prevent
     >
       <!-- Variant label -->
@@ -115,8 +145,14 @@ const hasNote = computed(() => !!props.state.note);
         <div class="stk-code-overlay" :class="{ 'stk-code-overlay-owned': owned }">{{ code }}</div>
       </div>
       <!-- Footer band -->
-      <div class="stk-footer" :class="{ 'stk-footer-owned': owned }">
+      <div
+        class="stk-footer"
+        :class="{ 'stk-footer-owned': owned, 'stk-footer-player': !!playerName }"
+      >
         <span class="stk-num" :class="{ 'stk-num-owned': owned }">{{ code }}</span>
+        <span v-if="playerName" class="stk-player" :class="{ 'stk-player-owned': owned }">{{
+          playerName
+        }}</span>
       </div>
       <!-- Owned check (not color-only) -->
       <div v-if="owned && dupes === 0" class="stk-check">
@@ -159,7 +195,7 @@ const hasNote = computed(() => !!props.state.note);
         type="button"
         class="stk-ctrl stk-ctrl-plus"
         :aria-label="owned ? `Agregar una repetida de ${code}` : `Marcar ${code} como pegada`"
-        @click.stop="emit('cycle')"
+        @click.stop="handleCycle"
       >
         +
       </button>
@@ -292,6 +328,26 @@ const hasNote = computed(() => !!props.state.note);
 .stk-footer-owned {
   background: rgba(0, 0, 0, 0.08);
   border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+.stk-footer-player {
+  height: 42px;
+  flex-direction: column;
+  gap: 1px;
+}
+.stk-player {
+  font-family: var(--display);
+  font-size: 7px;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  color: rgba(246, 241, 225, 0.45);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.stk-player-owned {
+  color: var(--pitch-deep);
 }
 .stk-code {
   font-family: var(--mono);
