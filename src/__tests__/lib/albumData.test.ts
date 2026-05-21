@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
   ALBUM_SECTIONS,
+  MAIN_SECTIONS,
+  BONUS_SECTIONS,
   TOTAL_STICKERS,
+  BONUS_STICKERS,
+  TOTAL_WITH_BONUS,
   TOTAL_SECTIONS,
   GROUPS,
   sectionForSticker,
@@ -46,8 +50,8 @@ describe('albumData', () => {
   });
 
   describe('ALBUM_SECTIONS', () => {
-    it('has 49 sections (1 intro + 48 teams)', () => {
-      expect(ALBUM_SECTIONS).toHaveLength(49);
+    it('has 50 sections (1 intro + 48 teams + 1 bonus)', () => {
+      expect(ALBUM_SECTIONS).toHaveLength(50);
     });
 
     it('first section is intro', () => {
@@ -58,8 +62,8 @@ describe('albumData', () => {
       expect(intro.count).toBe(20);
     });
 
-    it('all sections have count of 20', () => {
-      for (const s of ALBUM_SECTIONS) {
+    it('all main sections have count of 20', () => {
+      for (const s of MAIN_SECTIONS) {
         expect(s.count).toBe(20);
       }
     });
@@ -95,9 +99,27 @@ describe('albumData', () => {
     });
   });
 
-  describe('TOTAL_STICKERS', () => {
-    it('equals 980 (49 sections x 20)', () => {
+  describe('MAIN_SECTIONS / BONUS_SECTIONS', () => {
+    it('MAIN_SECTIONS has 49 sections', () => {
+      expect(MAIN_SECTIONS).toHaveLength(49);
+    });
+
+    it('BONUS_SECTIONS has 1 section (Coca-Cola)', () => {
+      expect(BONUS_SECTIONS).toHaveLength(1);
+      expect(BONUS_SECTIONS[0].code).toBe('CC');
+      expect(BONUS_SECTIONS[0].count).toBe(14);
+    });
+
+    it('TOTAL_STICKERS equals 980 (main only)', () => {
       expect(TOTAL_STICKERS).toBe(980);
+    });
+
+    it('BONUS_STICKERS equals 14', () => {
+      expect(BONUS_STICKERS).toBe(14);
+    });
+
+    it('TOTAL_WITH_BONUS equals 994', () => {
+      expect(TOTAL_WITH_BONUS).toBe(994);
     });
   });
 
@@ -126,8 +148,16 @@ describe('albumData', () => {
       expect(sectionForSticker(0)).toBeUndefined();
     });
 
-    it('returns undefined for sticker 981 (out of bounds)', () => {
-      expect(sectionForSticker(981)).toBeUndefined();
+    it('returns bonus section for sticker 981', () => {
+      expect(sectionForSticker(981)?.code).toBe('CC');
+    });
+
+    it('returns bonus section for sticker 994', () => {
+      expect(sectionForSticker(994)?.code).toBe('CC');
+    });
+
+    it('returns undefined for sticker 995 (out of bounds)', () => {
+      expect(sectionForSticker(995)).toBeUndefined();
     });
   });
 
@@ -152,8 +182,16 @@ describe('albumData', () => {
       expect(codeForSticker(980)).toBe('PAN20');
     });
 
+    it('returns CC1 for sticker 981', () => {
+      expect(codeForSticker(981)).toBe('CC1');
+    });
+
+    it('returns CC14 for sticker 994', () => {
+      expect(codeForSticker(994)).toBe('CC14');
+    });
+
     it('returns ?N for invalid sticker number', () => {
-      expect(codeForSticker(999)).toBe('?999');
+      expect(codeForSticker(995)).toBe('?995');
       expect(codeForSticker(0)).toBe('?0');
     });
   });
@@ -195,8 +233,20 @@ describe('albumData', () => {
       expect(stickerNumberFromCode('')).toBeUndefined();
     });
 
+    it('returns 981 for CC1', () => {
+      expect(stickerNumberFromCode('CC1')).toBe(981);
+    });
+
+    it('returns 994 for CC14', () => {
+      expect(stickerNumberFromCode('CC14')).toBe(994);
+    });
+
+    it('returns undefined for CC15 (out of range)', () => {
+      expect(stickerNumberFromCode('CC15')).toBeUndefined();
+    });
+
     it('is the inverse of codeForSticker', () => {
-      for (let n = 1; n <= 980; n++) {
+      for (let n = 1; n <= TOTAL_WITH_BONUS; n++) {
         const code = codeForSticker(n);
         expect(stickerNumberFromCode(code)).toBe(n);
       }
@@ -260,8 +310,8 @@ describe('albumData', () => {
       expect(completedSectionsCount({ ...ownAll(1, 20), ...ownAll(21, 20) })).toBe(2);
     });
 
-    it('returns 49 for a fully owned album', () => {
-      expect(completedSectionsCount(ownAll(1, 980))).toBe(49);
+    it('returns 49 for a fully owned album (excludes bonus)', () => {
+      expect(completedSectionsCount(ownAll(1, 994))).toBe(49);
     });
   });
 

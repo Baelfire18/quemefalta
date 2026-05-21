@@ -579,7 +579,7 @@ describe('useStickers', () => {
       await vi.waitFor(() => expect(loaded.value).toBe(true));
 
       setQueryResult({ data: null, error: null });
-      const count = await addBatch([0, -1, 981, 5]);
+      const count = await addBatch([0, -1, 995, 5]);
 
       expect(count).toBe(1);
       expect(stickers.value[5]?.owned).toBe(true);
@@ -777,7 +777,7 @@ describe('useStickers', () => {
       setQueryResult({ data: null, error: null });
       const data = new Map([
         [0, 1],
-        [981, 1],
+        [995, 1],
         [5, 1],
       ]);
       const changed = await importBulk(data, 'merge');

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useStickers } from '@/composables/useStickers';
-import { TOTAL_STICKERS } from '@/lib/albumData';
+import { TOTAL_WITH_BONUS } from '@/lib/albumData';
 import { generateCsv, parseCsv, CsvParseError } from '@/lib/csvUtils';
 
 const emit = defineEmits<{
@@ -60,7 +60,7 @@ const diff = computed(() => {
   let toChange = 0;
   let unchanged = 0;
 
-  for (let n = 1; n <= TOTAL_STICKERS; n++) {
+  for (let n = 1; n <= TOTAL_WITH_BONUS; n++) {
     const current = stickers.value[n];
     const csvQty = pendingData.value.get(n) ?? 0;
     const currentQty = current?.owned ? 1 + current.dupes : 0;

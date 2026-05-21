@@ -6,6 +6,7 @@
 /** Intro & FIFA Museum (code FWC) — not a country flag */
 const SECTION_ICONS: Record<string, string> = {
   FWC: '⚽',
+  CC: '🥤',
 };
 
 const SUBDIVISION_FLAGS: Record<string, string> = {

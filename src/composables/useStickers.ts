@@ -2,7 +2,7 @@ import { ref, computed, readonly, watch } from 'vue';
 import { supabase, ensureFreshSession, withAuthRetry, sessionDead } from '@/lib/supabase';
 import { useAuth } from '@/composables/useAuth';
 import { useUndo } from '@/composables/useUndo';
-import { TOTAL_STICKERS } from '@/lib/albumData';
+import { TOTAL_STICKERS, BONUS_STICKERS, TOTAL_WITH_BONUS } from '@/lib/albumData';
 
 export interface StickerState {
   owned: boolean;
@@ -627,7 +627,7 @@ async function addBatch(stickerNumbers: number[]) {
     // Count occurrences of each sticker number
     const counts = new Map<number, number>();
     for (const num of stickerNumbers) {
-      if (num < 1 || num > TOTAL_STICKERS) continue;
+      if (num < 1 || num > TOTAL_WITH_BONUS) continue;
       counts.set(num, (counts.get(num) || 0) + 1);
     }
 
@@ -715,7 +715,7 @@ async function removeBatch(stickerNumbers: number[]) {
     // Apariciones por sticker en el input
     const counts = new Map<number, number>();
     for (const num of stickerNumbers) {
-      if (num < 1 || num > TOTAL_STICKERS) continue;
+      if (num < 1 || num > TOTAL_WITH_BONUS) continue;
       counts.set(num, (counts.get(num) || 0) + 1);
     }
 
@@ -984,7 +984,7 @@ async function importBulk(data: Map<number, number>, mode: 'replace' | 'merge'):
   let changed = 0;
 
   for (const [num, qty] of data) {
-    if (num < 1 || num > TOTAL_STICKERS) continue;
+    if (num < 1 || num > TOTAL_WITH_BONUS) continue;
     const current = snapshot[num];
     const currentQty = current?.owned ? 1 + current.dupes : 0;
 
@@ -1136,10 +1136,20 @@ const stats = computed(() => {
   let owned = 0;
   let dupes = 0;
   let withNotes = 0;
+  let bonusOwned = 0;
+  let bonusDupes = 0;
   for (const key in stickers.value) {
+    const n = Number(key);
     const s = stickers.value[key];
-    if (s.owned) owned++;
-    if (s.owned && s.dupes > 0) dupes += s.dupes;
+    const isBonus = n > TOTAL_STICKERS;
+    if (s.owned) {
+      if (isBonus) bonusOwned++;
+      else owned++;
+    }
+    if (s.owned && s.dupes > 0) {
+      if (isBonus) bonusDupes += s.dupes;
+      else dupes += s.dupes;
+    }
     if (s.note) withNotes++;
   }
   return {
@@ -1148,6 +1158,9 @@ const stats = computed(() => {
     dupes,
     withNotes,
     pct: Math.round((owned / TOTAL_STICKERS) * 100 * 10) / 10,
+    bonusOwned,
+    bonusMissing: BONUS_STICKERS - bonusOwned,
+    bonusDupes,
   };
 });
 

@@ -7,6 +7,7 @@ export interface AlbumSection {
   group?: string;
   isTeam?: boolean;
   zeroIndexed?: boolean;
+  isBonus?: boolean;
 }
 
 interface TeamDef {
@@ -117,9 +118,21 @@ export const ALBUM_SECTIONS: AlbumSection[] = [
     zeroIndexed: true,
   },
   ...teamSections,
+  {
+    id: 'bonus-coca-cola',
+    name: 'Coca-Cola',
+    code: 'CC',
+    count: 14,
+    startsAt: 981,
+    isBonus: true,
+  },
 ];
 
-export const TOTAL_STICKERS = ALBUM_SECTIONS.reduce((sum, s) => sum + s.count, 0);
+export const MAIN_SECTIONS = ALBUM_SECTIONS.filter((s) => !s.isBonus);
+export const BONUS_SECTIONS = ALBUM_SECTIONS.filter((s) => s.isBonus);
+export const TOTAL_STICKERS = MAIN_SECTIONS.reduce((sum, s) => sum + s.count, 0);
+export const BONUS_STICKERS = BONUS_SECTIONS.reduce((sum, s) => sum + s.count, 0);
+export const TOTAL_WITH_BONUS = TOTAL_STICKERS + BONUS_STICKERS;
 
 // Helpers para mapear número → sección
 export function sectionForSticker(stickerNumber: number): AlbumSection | undefined {
@@ -170,10 +183,10 @@ export function isSectionComplete(section: AlbumSection, owned: OwnedMap): boole
   return true;
 }
 
-/** Cuántas secciones del álbum (49) están completas. */
+/** Cuántas secciones principales del álbum (49) están completas. */
 export function completedSectionsCount(owned: OwnedMap): number {
   let n = 0;
-  for (const sec of ALBUM_SECTIONS) {
+  for (const sec of MAIN_SECTIONS) {
     if (isSectionComplete(sec, owned)) n++;
   }
   return n;
@@ -194,5 +207,5 @@ export function completedTeamsInGroup(
   return { completed, total };
 }
 
-/** Total de secciones del álbum (49). Util para el denominador del contador global. */
-export const TOTAL_SECTIONS = ALBUM_SECTIONS.length;
+/** Total de secciones principales del álbum (49). Util para el denominador del contador global. */
+export const TOTAL_SECTIONS = MAIN_SECTIONS.length;

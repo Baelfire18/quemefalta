@@ -1,4 +1,4 @@
-import { ALBUM_SECTIONS, TOTAL_STICKERS } from '@/lib/albumData';
+import { ALBUM_SECTIONS, TOTAL_WITH_BONUS } from '@/lib/albumData';
 import type { StickerState } from '@/composables/useStickers';
 
 export class CsvParseError extends Error {
@@ -23,6 +23,8 @@ export function generateCsv(stickers: Record<number, StickerState>): string {
       if (!s?.owned) return 0;
       return 1 + s.dupes;
     });
+    // Pad to 20 columns for consistency (bonus sections may have fewer)
+    while (values.length < 20) values.push(0);
     return `${sec.code},${values.join(',')}`;
   });
 
@@ -96,7 +98,7 @@ export function parseCsv(raw: string): { data: Map<number, number>; warnings: st
       }
       const qty = Math.max(0, val);
       const stickerNum = sec.startsAt + j;
-      if (stickerNum >= 1 && stickerNum <= TOTAL_STICKERS) {
+      if (stickerNum >= 1 && stickerNum <= TOTAL_WITH_BONUS) {
         data.set(stickerNum, qty);
       }
     }
