@@ -7,6 +7,7 @@
 const SECTION_ICONS: Record<string, string> = {
   FWC: '⚽',
   CC: '🥤',
+  MCD: '〽️',
 };
 
 const SUBDIVISION_FLAGS: Record<string, string> = {
