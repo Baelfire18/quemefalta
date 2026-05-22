@@ -4,6 +4,7 @@ import { MAIN_SECTIONS, BONUS_SECTIONS, TOTAL_STICKERS, codeForSticker } from '@
 import { pctColor } from '@/lib/progressColors';
 import { teamFlagEmoji } from '@/lib/teamFlagEmoji';
 import { useStickers } from '@/composables/useStickers';
+import { useAuth } from '@/composables/useAuth';
 import SectionSearch from '@/components/SectionSearch.vue';
 import { matchesSection, matchesStickerCode } from '@/lib/searchSections';
 
@@ -13,6 +14,7 @@ const emit = defineEmits<{
 }>();
 
 const { stickers, stats } = useStickers();
+const { profile } = useAuth();
 
 const groupFilter = ref<string | null>(null);
 const sortBy = ref<'default' | 'almost'>('default');
@@ -73,6 +75,16 @@ const bonusMissing = computed(() => {
   }).filter((g) => g.items.length > 0);
 });
 
+function isBonusVisible(sectionId: string): boolean {
+  if (sectionId === 'bonus-coca-cola') return !!profile.value?.show_bonus_coca_cola;
+  if (sectionId === 'bonus-mcdonalds') return !!profile.value?.show_bonus_mcdonalds;
+  return false;
+}
+
+const visibleBonusMissing = computed(() =>
+  bonusMissing.value.filter((g) => isBonusVisible(g.section.id)),
+);
+
 function copyMissing() {
   const lines: string[] = ['Me faltan estas láminas del álbum:'];
   for (const group of missingBySection.value) {
@@ -80,12 +92,10 @@ function copyMissing() {
       `${group.section.name}: ${group.items.map((n: number) => codeForSticker(n)).join(', ')}`,
     );
   }
-  if (bonusMissing.value.length > 0) {
-    for (const group of bonusMissing.value) {
-      lines.push(
-        `🥤 Bonus — ${group.section.name}: ${group.items.map((n: number) => codeForSticker(n)).join(', ')}`,
-      );
-    }
+  for (const group of visibleBonusMissing.value) {
+    lines.push(
+      `${teamFlagEmoji(group.section.code)} Bonus — ${group.section.name}: ${group.items.map((n: number) => codeForSticker(n)).join(', ')}`,
+    );
   }
   const text = lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/';
   navigator.clipboard?.writeText(text).then(
@@ -201,7 +211,7 @@ function copyMissing() {
       </div>
 
       <!-- Bonus missing -->
-      <div v-for="group in bonusMissing" :key="group.section.id" class="list-group">
+      <div v-for="group in visibleBonusMissing" :key="group.section.id" class="list-group">
         <div
           class="list-group-head"
           style="cursor: pointer"
@@ -209,7 +219,9 @@ function copyMissing() {
           @click="toggleCollapse(group.section.id)"
         >
           <div class="list-group-head-left">
-            <span class="list-group-flag" aria-hidden="true">🥤</span>
+            <span class="list-group-flag" aria-hidden="true">{{
+              teamFlagEmoji(group.section.code)
+            }}</span>
             <span class="list-group-title"
               >Bonus — {{ group.section.name }} ({{ group.items.length }})</span
             >

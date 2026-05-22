@@ -29,6 +29,8 @@ const DEFAULT_PROFILE = {
   display_name: 'Dev User',
   avatar_url: null,
   is_public: true,
+  show_bonus_coca_cola: false,
+  show_bonus_mcdonalds: false,
   onboarded: true,
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
@@ -80,6 +82,8 @@ function buildPublicAlbumStats(): Row[] {
         username: p.username,
         display_name: p.display_name,
         avatar_url: p.avatar_url,
+        show_bonus_coca_cola: p.show_bonus_coca_cola ?? false,
+        show_bonus_mcdonalds: p.show_bonus_mcdonalds ?? false,
         owned_count: userStickers.length,
         dupes_count: userStickers.reduce((sum: number, s: any) => sum + (s.dupes ?? 0), 0),
       };
@@ -308,5 +312,6 @@ export function createMockClient() {
   return {
     auth: mockAuth,
     from: (table: string) => new MockQueryBuilder(table),
+    rpc: () => Promise.resolve({ data: null, error: null }),
   };
 }

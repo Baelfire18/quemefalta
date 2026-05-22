@@ -54,6 +54,8 @@ export function createProfile(overrides?: Partial<Profile>): Profile {
     display_name: 'Test User',
     avatar_url: 'https://example.com/avatar.jpg',
     is_public: true,
+    show_bonus_coca_cola: false,
+    show_bonus_mcdonalds: false,
     onboarded: true,
     phone: null,
     created_at: '2025-01-01T00:00:00Z',

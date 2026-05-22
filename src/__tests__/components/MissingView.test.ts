@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils';
 import { ref, readonly, computed } from 'vue';
 
 let MissingView: any;
+const mockProfileRef = ref<any>({ show_bonus_coca_cola: false, show_bonus_mcdonalds: false });
 
 function createStickersState(ownedNumbers: number[]) {
   const map: Record<number, { owned: boolean; dupes: number; note: string }> = {};
@@ -15,6 +16,21 @@ function createStickersState(ownedNumbers: number[]) {
 
 beforeEach(async () => {
   vi.resetModules();
+  mockProfileRef.value = { show_bonus_coca_cola: false, show_bonus_mcdonalds: false };
+
+  vi.doMock('@/composables/useAuth', () => ({
+    useAuth: () => ({
+      user: ref(null),
+      profile: mockProfileRef,
+      loading: ref(false),
+      isAuthenticated: computed(() => false),
+      needsOnboarding: computed(() => false),
+      init: vi.fn(),
+      signInWithGoogle: vi.fn(),
+      signOut: vi.fn(),
+      updateProfile: vi.fn(),
+    }),
+  }));
 
   vi.doMock('@/composables/useStickers', () => {
     const stickersRef = ref<Record<number, any>>({});
@@ -63,11 +79,35 @@ describe('MissingView', () => {
     expect(w.find('.empty-title').text()).toContain('ÁLBUM COMPLETO');
   });
 
-  it('shows sections with missing stickers', () => {
+  it('shows sections with missing stickers (bonus hidden by default)', () => {
     const w = mount(MissingView);
-    // With 0 stickers owned, all 50 sections should show (49 main + 1 bonus)
+    // With 0 stickers owned and show_bonus=false, only 49 main sections show
+    const groups = w.findAll('.list-group');
+    expect(groups.length).toBe(49);
+  });
+
+  it('shows only Coca-Cola bonus when show_bonus_coca_cola is true', () => {
+    mockProfileRef.value = { show_bonus_coca_cola: true, show_bonus_mcdonalds: false };
+    const w = mount(MissingView);
+    // 49 main + 1 bonus (Coca-Cola) = 50
     const groups = w.findAll('.list-group');
     expect(groups.length).toBe(50);
+  });
+
+  it("shows only McDonald's bonus when show_bonus_mcdonalds is true", () => {
+    mockProfileRef.value = { show_bonus_coca_cola: false, show_bonus_mcdonalds: true };
+    const w = mount(MissingView);
+    // 49 main + 1 bonus (McDonald's) = 50
+    const groups = w.findAll('.list-group');
+    expect(groups.length).toBe(50);
+  });
+
+  it('shows both bonus sections when both toggles are true', () => {
+    mockProfileRef.value = { show_bonus_coca_cola: true, show_bonus_mcdonalds: true };
+    const w = mount(MissingView);
+    // 49 main + 2 bonus = 51
+    const groups = w.findAll('.list-group');
+    expect(groups.length).toBe(51);
   });
 
   it('shows copy button when stickers are missing', () => {

@@ -144,6 +144,44 @@ async function toggleVisibility() {
   }
 }
 
+const togglingCocaCola = ref(false);
+const cocaColaError = ref<string | null>(null);
+
+async function toggleCocaCola() {
+  if (togglingCocaCola.value || !profile.value) return;
+  togglingCocaCola.value = true;
+  cocaColaError.value = null;
+  const newValue = !profile.value.show_bonus_coca_cola;
+  try {
+    await updateProfile({ show_bonus_coca_cola: newValue });
+    track('toggle_show_bonus_coca_cola', { show_bonus_coca_cola: newValue });
+  } catch (e) {
+    console.error('[toggleCocaCola]', e);
+    cocaColaError.value = 'No se pudo guardar. Intenta de nuevo.';
+  } finally {
+    togglingCocaCola.value = false;
+  }
+}
+
+const togglingMcDonalds = ref(false);
+const mcdonaldsError = ref<string | null>(null);
+
+async function toggleMcDonalds() {
+  if (togglingMcDonalds.value || !profile.value) return;
+  togglingMcDonalds.value = true;
+  mcdonaldsError.value = null;
+  const newValue = !profile.value.show_bonus_mcdonalds;
+  try {
+    await updateProfile({ show_bonus_mcdonalds: newValue });
+    track('toggle_show_bonus_mcdonalds', { show_bonus_mcdonalds: newValue });
+  } catch (e) {
+    console.error('[toggleMcDonalds]', e);
+    mcdonaldsError.value = 'No se pudo guardar. Intenta de nuevo.';
+  } finally {
+    togglingMcDonalds.value = false;
+  }
+}
+
 // Undo toast state
 const undoToast = ref({ visible: false, message: '', action: null as (() => void) | null });
 
@@ -502,6 +540,60 @@ const userInitial = computed(() => {
                   <span class="pm-item-sub">
                     {{ profile?.phone ? profile.phone : 'Sin configurar' }}
                   </span>
+                </span>
+              </button>
+              <button
+                class="pm-item pm-item-toggle"
+                :disabled="togglingCocaCola"
+                :aria-pressed="!!profile?.show_bonus_coca_cola"
+                @click.stop="toggleCocaCola"
+              >
+                <span class="pm-item-label">
+                  <span>🥤 Bonus Coca-Cola</span>
+                  <span class="pm-item-sub">
+                    {{
+                      profile?.show_bonus_coca_cola
+                        ? '14 láminas extra visibles'
+                        : 'Ocultas — no afectan tu %'
+                    }}
+                  </span>
+                  <span v-if="cocaColaError" class="pm-item-error" role="alert">
+                    {{ cocaColaError }}
+                  </span>
+                </span>
+                <span
+                  class="pm-toggle"
+                  :class="{ 'pm-toggle-on': profile?.show_bonus_coca_cola }"
+                  aria-hidden="true"
+                >
+                  <span class="pm-toggle-dot" />
+                </span>
+              </button>
+              <button
+                class="pm-item pm-item-toggle"
+                :disabled="togglingMcDonalds"
+                :aria-pressed="!!profile?.show_bonus_mcdonalds"
+                @click.stop="toggleMcDonalds"
+              >
+                <span class="pm-item-label">
+                  <span>〽️ Bonus McDonald's</span>
+                  <span class="pm-item-sub">
+                    {{
+                      profile?.show_bonus_mcdonalds
+                        ? '48 láminas extra visibles'
+                        : 'Ocultas — no afectan tu %'
+                    }}
+                  </span>
+                  <span v-if="mcdonaldsError" class="pm-item-error" role="alert">
+                    {{ mcdonaldsError }}
+                  </span>
+                </span>
+                <span
+                  class="pm-toggle"
+                  :class="{ 'pm-toggle-on': profile?.show_bonus_mcdonalds }"
+                  aria-hidden="true"
+                >
+                  <span class="pm-toggle-dot" />
                 </span>
               </button>
               <button

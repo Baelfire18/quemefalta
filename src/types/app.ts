@@ -4,6 +4,8 @@ export interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   is_public: boolean;
+  show_bonus_coca_cola: boolean;
+  show_bonus_mcdonalds: boolean;
   onboarded: boolean;
   phone: string | null;
   created_at: string;
