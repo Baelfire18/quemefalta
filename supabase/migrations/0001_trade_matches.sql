@@ -56,7 +56,7 @@ as $$
     from candidates c
     left join lateral (
       select
-        count(*) filter (where owned = true)::int as owned_count,
+        count(*) filter (where owned = true and sticker_number <= 980)::int as owned_count,
         coalesce(sum(dupes) filter (where owned = true), 0)::int as dupes_count
       from stickers
       where user_id = c.id

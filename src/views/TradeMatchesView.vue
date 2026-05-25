@@ -19,7 +19,8 @@ const charityMatches = computed(() =>
 );
 
 function pct(owned: number): number {
-  return Math.min(100, Math.round((owned / TOTAL_STICKERS) * 100 * 10) / 10);
+  // Cap numerator to exclude bonus stickers that inflate owned_count beyond TOTAL_STICKERS
+  return Math.round((Math.min(owned, TOTAL_STICKERS) / TOTAL_STICKERS) * 100 * 10) / 10;
 }
 
 function initialOf(m: TradeMatch): string {
