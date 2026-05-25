@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ref } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import * as mockSupabase from '../mocks/supabase';
@@ -42,6 +42,10 @@ beforeEach(async () => {
 
   const mod = await import('@/composables/useStickers');
   useStickers = mod.useStickers;
+});
+
+afterEach(() => {
+  vi.clearAllTimers();
 });
 
 describe('useStickers', () => {
