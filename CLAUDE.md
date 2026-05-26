@@ -146,9 +146,14 @@ Si el error es **permanente** (refresh token revocado), `sessionDead = true` y a
 Mostrar **`+N` con N = solo extras**, sin contar la propia (`dupes` en BD = "repetidas extra"). En textos de copy al portapapeles **se omite `(+1)`** porque `+1` es el mínimo y satura visualmente — solo se muestra `(+N)` cuando `dupes ≥ 2`.
 
 ### Trade matches
-RPC `public.public_trade_matches()` en Supabase devuelve hasta 100 perfiles públicos ordenados por `their_dupes_for_me DESC` con `LIMIT 100`. Filtra `owned_count > 0` y exige overlap en al menos un sentido. `SECURITY DEFINER` para saltar RLS de forma controlada (solo perfiles `is_public = true`). Grant solo a `authenticated`.
+RPC `public.public_trade_matches(p_sticker_number int default null)` en Supabase devuelve hasta 100 perfiles públicos ordenados por `their_dupes_for_me DESC` con `LIMIT 100`. Filtra `owned_count > 0` y exige overlap en al menos un sentido. `SECURITY DEFINER` para saltar RLS de forma controlada (solo perfiles `is_public = true`). Grant solo a `authenticated`.
+
+- Parámetro opcional `p_sticker_number`: cuando no es null, filtra candidatos a solo los que tienen ese sticker con `owned = true AND dupes > 0` (filtro en CTE `candidates` con `EXISTS`, antes de los LATERAL joins).
+- Sin parámetro se comporta igual que antes (default null, sin overhead extra).
 
 Vista en `/cambios`: dos secciones — **Cambio mutuo** (su `their_dupes_for_me > 0`) y **Solo das tú** (su `their_dupes_for_me === 0`). Card clickeable lleva a `/intercambio/<yo>/<él>`.
+
+**Filtro por lámina**: `SectionSearch` en la vista permite escribir un código (ej: `MEX5`) y presionar Enter para filtrar server-side. Chip mint muestra el filtro activo. Empty state específico cuando nadie tiene esa lámina como repetida.
 
 ### Contacto por WhatsApp
 - Columna `profiles.phone` (genérico — sirve también para Telegram/SMS sin migrar).
@@ -197,6 +202,7 @@ Los archivos en `supabase/migrations/` **no se aplican solos** — copiar el SQL
 | `0001_trade_matches.sql` | RPC `public_trade_matches()` con CTEs (my_owned, my_dupes, candidates) + `LATERAL` joins. `SECURITY DEFINER`, grant solo a `authenticated`. |
 | `0002_profile_phone.sql` | Columna `phone text` en `profiles` + RPC `get_profile_phone(p_username)` (devuelve `null` si `auth.uid()` es null). Grant solo a `authenticated`. |
 | `0003_show_bonus.sql` | Columnas `show_bonus_coca_cola` y `show_bonus_mcdonalds` (boolean, default `false`). Requiere agregar ambos campos a la vista `public_album_stats` en Supabase Dashboard manualmente. |
+| `0004_trade_matches_filter.sql` | DROP `public_trade_matches()` sin params + CREATE con `p_sticker_number int default null`. Filtro `EXISTS` en CTE `candidates`. |
 
 ## Convenciones
 
