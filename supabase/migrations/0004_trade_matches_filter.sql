@@ -1,16 +1,11 @@
--- public_trade_matches: lista usuarios publicos con potencial de canje
--- contra el usuario logeado (auth.uid()).
+-- Agrega filtro opcional por sticker_number a public_trade_matches.
+-- Cuando p_sticker_number IS NOT NULL, solo devuelve candidatos que tengan
+-- ese sticker con owned = true y dupes > 0.
 --
--- Devuelve por cada candidato:
---   their_dupes_for_me  = sus repetidas (owned + dupes > 0) que YO no tengo owned
---   my_dupes_for_them   = mis repetidas (owned + dupes > 0) que ELLOS no tienen owned
---
--- Parametro opcional p_sticker_number: si se pasa, solo devuelve candidatos
--- que tengan ese sticker como repetida (owned = true, dupes > 0).
---
--- Orden: their_dupes_for_me DESC, my_dupes_for_them DESC. LIMIT 100.
--- Filtra usuarios sin overlap en ninguno de los dos sentidos.
--- SECURITY DEFINER para saltar RLS de forma controlada (solo perfiles is_public=true).
+-- IMPORTANTE: PostgreSQL trata f() y f(int default null) como funciones distintas.
+-- Primero DROP la vieja, luego CREATE la nueva con default.
+
+drop function if exists public.public_trade_matches();
 
 create or replace function public.public_trade_matches(
   p_sticker_number int default null
