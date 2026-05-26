@@ -5,6 +5,7 @@ import { ALBUM_SECTIONS, BONUS_SECTIONS } from '@/lib/albumData';
 import { barColor, pctColor } from '@/lib/progressColors';
 import { teamFlagEmoji } from '@/lib/teamFlagEmoji';
 import { useStickers } from '@/composables/useStickers';
+import { useAuth } from '@/composables/useAuth';
 
 const emit = defineEmits<{
   openDetail: [stickerNumber: number];
@@ -12,6 +13,7 @@ const emit = defineEmits<{
 }>();
 
 const { stickers } = useStickers();
+const { profile } = useAuth();
 
 const expandedGroup = ref<string | null>(null);
 const expandedTeam = ref<string | null>(null);
@@ -73,6 +75,14 @@ const bonusData = computed(() => {
     };
   });
 });
+
+const visibleBonusData = computed(() =>
+  bonusData.value.filter((bs) => {
+    if (bs.id === 'bonus-coca-cola') return profile.value?.show_bonus_coca_cola;
+    if (bs.id === 'bonus-mcdonalds') return profile.value?.show_bonus_mcdonalds;
+    return false;
+  }),
+);
 
 function toggleGroup(g: string) {
   if (expandedGroup.value === g) {
@@ -249,12 +259,12 @@ defineExpose({ openSection });
     </div>
 
     <!-- Bonus sections -->
-    <div v-for="bs in bonusData" :key="bs.id" class="acc-item acc-bonus-item">
+    <div v-for="bs in visibleBonusData" :key="bs.id" class="acc-item acc-bonus-item">
       <button
         :class="['acc-team', { on: expandedTeam === bs.id, done: bs.complete }]"
         @click="toggleTeam(bs.id)"
       >
-        <span class="acc-team-flag">🥤</span>
+        <span class="acc-team-flag">{{ teamFlagEmoji(bs.code) }}</span>
         <span class="acc-team-name">{{ bs.name }}</span>
         <span class="acc-bonus-pill">BONUS</span>
         <div class="acc-team-bar">

@@ -12,6 +12,7 @@ import {
   codeForSticker,
 } from '@/lib/albumData';
 import { useMeta } from '@/composables/useMeta';
+import { teamFlagEmoji } from '@/lib/teamFlagEmoji';
 import { track } from '@/lib/analytics';
 import { launchFireworks } from '@/lib/fireworks';
 import { shareCelebrationCard } from '@/lib/celebrationCard';
@@ -22,6 +23,8 @@ interface PublicProfile {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
+  show_bonus_coca_cola: boolean;
+  show_bonus_mcdonalds: boolean;
   owned_count: number;
   dupes_count: number;
 }
@@ -201,13 +204,27 @@ const bonusMissingBySection = computed(() => {
 });
 
 const bonusDupesBySection = computed(() => {
-  const groups = new Map<string, { section: string; items: { code: string; count: number }[] }>();
+  const groups = new Map<
+    string,
+    {
+      section: string;
+      sectionId: string;
+      sectionCode: string;
+      items: { code: string; count: number }[];
+    }
+  >();
   for (const sec of BONUS_SECTIONS) {
     for (let i = 0; i < sec.count; i++) {
       const num = sec.startsAt + i;
       const s = stickerMap.value.get(num);
       if (s?.owned && s.dupes > 0) {
-        if (!groups.has(sec.id)) groups.set(sec.id, { section: sec.name, items: [] });
+        if (!groups.has(sec.id))
+          groups.set(sec.id, {
+            section: sec.name,
+            sectionId: sec.id,
+            sectionCode: sec.code,
+            items: [],
+          });
         groups.get(sec.id)!.items.push({ code: codeForSticker(num), count: s.dupes });
       }
     }
@@ -271,17 +288,21 @@ async function shareProfile() {
   }
 }
 
+function isProfileBonusVisible(sectionId: string): boolean {
+  if (sectionId === 'bonus-coca-cola') return !!profile.value?.show_bonus_coca_cola;
+  if (sectionId === 'bonus-mcdonalds') return !!profile.value?.show_bonus_mcdonalds;
+  return false;
+}
+
 function copyMissing() {
   const lines = [`A ${displayName.value} le faltan estas láminas:`];
   for (const g of missingBySection.value) {
     lines.push(`${g.section.name}: ${g.items.map((n) => codeForSticker(n)).join(', ')}`);
   }
-  if (bonusMissingBySection.value.length > 0) {
-    for (const g of bonusMissingBySection.value) {
-      lines.push(
-        `🥤 Bonus — ${g.section.name}: ${g.items.map((n) => codeForSticker(n)).join(', ')}`,
-      );
-    }
+  for (const g of bonusMissingBySection.value.filter((g) => isProfileBonusVisible(g.section.id))) {
+    lines.push(
+      `${teamFlagEmoji(g.section.code)} Bonus — ${g.section.name}: ${g.items.map((n) => codeForSticker(n)).join(', ')}`,
+    );
   }
   navigator.clipboard
     ?.writeText(lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/')
@@ -302,14 +323,12 @@ function copyDupes() {
         .join(', ')}`,
     );
   }
-  if (bonusDupesBySection.value.length > 0) {
-    for (const g of bonusDupesBySection.value) {
-      lines.push(
-        `🥤 Bonus — ${g.section}: ${g.items
-          .map((i) => (i.count > 1 ? `${i.code} (+${i.count})` : i.code))
-          .join(', ')}`,
-      );
-    }
+  for (const g of bonusDupesBySection.value.filter((g) => isProfileBonusVisible(g.sectionId))) {
+    lines.push(
+      `${teamFlagEmoji(g.sectionCode)} Bonus — ${g.section}: ${g.items
+        .map((i) => (i.count > 1 ? `${i.code} (+${i.count})` : i.code))
+        .join(', ')}`,
+    );
   }
   navigator.clipboard
     ?.writeText(lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/')

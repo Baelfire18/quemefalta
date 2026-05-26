@@ -30,13 +30,19 @@ export interface ExchangeResult {
  * aGivesB = A's duplicates that B is missing.
  * bGivesA = B's duplicates that A is missing.
  */
-export function computeExchange(mapA: StickerMap, mapB: StickerMap): ExchangeResult {
+export function computeExchange(
+  mapA: StickerMap,
+  mapB: StickerMap,
+  skipBonusIds: ReadonlySet<string> = new Set(),
+): ExchangeResult {
   const aGivesB: ExchangeGroup[] = [];
   const bGivesA: ExchangeGroup[] = [];
   let aGivesBCount = 0;
   let bGivesACount = 0;
 
   for (const sec of ALBUM_SECTIONS) {
+    if (sec.isBonus && skipBonusIds.has(sec.id)) continue;
+
     const aItems: ExchangeItem[] = [];
     const bItems: ExchangeItem[] = [];
 

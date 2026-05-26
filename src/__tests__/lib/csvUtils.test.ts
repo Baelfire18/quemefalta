@@ -21,7 +21,8 @@ describe('csvUtils', () => {
       const lines = csv.split('\n').slice(1);
       for (const line of lines) {
         const values = line.split(',').slice(1);
-        expect(values).toHaveLength(20);
+        // Most sections have 20 columns (padded), McDonald's has 48
+        expect(values.length).toBeGreaterThanOrEqual(20);
         expect(values.every((v) => v === '0')).toBe(true);
       }
     });

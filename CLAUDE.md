@@ -117,21 +117,43 @@ Si el error es **permanente** (refresh token revocado), `sessionDead = true` y a
 - Lámina 13 de cada equipo → variant `squad` (selección, 2 columnas, imagen campo)
 - Solo aplica a secciones de equipo (`isTeam`), no a FWC intro (que tiene su propio layout fwc-h / fwc-v)
 
-### Sección bonus Coca-Cola (CC1–CC14)
-- 14 láminas extra, `isBonus: true`, sticker numbers 981–994, código `CC`
-- **No cuentan en el porcentaje principal** — stats separados (`bonusOwned`, `bonusMissing`, `bonusDupes`)
+### Secciones bonus (opt-in, toggles independientes)
+- **Dos toggles independientes**: `profiles.show_bonus_coca_cola` y `profiles.show_bonus_mcdonalds` (ambos default `false`)
+- Cada toggle en el menú avatar de AlbumView, activable por separado
+- Cuando un toggle está OFF: esa sección bonus oculta en AlbumAccordion, MissingView, DupesView, copy text, y exchange. **Datos no se borran de DB**, solo se ignoran en la UI
+- **No cuentan en el porcentaje principal**, stats separados (`bonusOwned`, `bonusMissing`, `bonusDupes`)
+- Perfil público y exchange respetan los toggles del dueño del perfil (vienen de `public_album_stats`)
+- Exchange incluye una sección bonus solo si **ambos** perfiles la tienen activada
+- En AlbumAccordion se renderizan aparte con pill `BONUS`
+- CSV export/import y BatchInput siempre incluyen bonus (preservar datos)
+- Emojis dinámicos por sección (`teamFlagEmoji(section.code)`)
+- Guards usan `visibleBonusData`/`visibleBonusMissing`/`visibleBonusDupes` computeds que filtran por sección
+- Exchange usa `skipBonusIds: Set<string>` en vez de un solo boolean
+
+#### Coca-Cola (CC1–CC14)
+- 14 láminas, `isBonus: true`, sticker numbers 981–994, código `CC`, emoji 🥤
 - Variant `bonus` en StickerCard: imagen `coca-cola-bonus.jpg`, sonido de lata al tocar (3s max)
 - Nombres de jugadores en `cocaColaPlayers.ts`, se muestran en el footer de la card con bandera
-- En Faltantes/Repetidas aparecen inline con label "🥤 Extra — Coca-Cola", sin toggle
-- En AlbumAccordion se renderizan aparte con pill `BONUS`
+
+#### McDonald's (MC-{PAÍS}-13 — 48 láminas)
+- 48 láminas (una por selección), `isBonus: true`, sticker numbers 995–1042, código interno `MCD`, emoji 〽️
+- Código de lámina: `MC-{FIFA_CODE}-13` (e.g. `MC-MEX-13`, `MC-ARG-13`). Generado por `mcdCodeForIndex()` / `mcdIndexFromCode()` en `mcdonaldsStickers.ts`
+- `codeForSticker` y `stickerNumberFromCode` manejan el patrón especial `MC-XXX-13`
+- Variant `bonus` en StickerCard: imagen `mcdonalds-bonus.jpg` (sin sonido)
+- Cada card muestra bandera + código FIFA del equipo como playerName
 
 ### Convención de repetidas
 Mostrar **`+N` con N = solo extras**, sin contar la propia (`dupes` en BD = "repetidas extra"). En textos de copy al portapapeles **se omite `(+1)`** porque `+1` es el mínimo y satura visualmente — solo se muestra `(+N)` cuando `dupes ≥ 2`.
 
 ### Trade matches
-RPC `public.public_trade_matches()` en Supabase devuelve hasta 100 perfiles públicos ordenados por `their_dupes_for_me DESC` con `LIMIT 100`. Filtra `owned_count > 0` y exige overlap en al menos un sentido. `SECURITY DEFINER` para saltar RLS de forma controlada (solo perfiles `is_public = true`). Grant solo a `authenticated`.
+RPC `public.public_trade_matches(p_sticker_number int default null)` en Supabase devuelve hasta 100 perfiles públicos ordenados por `their_dupes_for_me DESC` con `LIMIT 100`. Filtra `owned_count > 0` y exige overlap en al menos un sentido. `SECURITY DEFINER` para saltar RLS de forma controlada (solo perfiles `is_public = true`). Grant solo a `authenticated`.
+
+- Parámetro opcional `p_sticker_number`: cuando no es null, filtra candidatos a solo los que tienen ese sticker con `owned = true AND dupes > 0` (filtro en CTE `candidates` con `EXISTS`, antes de los LATERAL joins).
+- Sin parámetro se comporta igual que antes (default null, sin overhead extra).
 
 Vista en `/cambios`: dos secciones — **Cambio mutuo** (su `their_dupes_for_me > 0`) y **Solo das tú** (su `their_dupes_for_me === 0`). Card clickeable lleva a `/intercambio/<yo>/<él>`.
+
+**Filtro por lámina**: `SectionSearch` en la vista permite escribir un código (ej: `MEX5`) y presionar Enter para filtrar server-side. Chip mint muestra el filtro activo. Empty state específico cuando nadie tiene esa lámina como repetida.
 
 ### Contacto por WhatsApp
 - Columna `profiles.phone` (genérico — sirve también para Telegram/SMS sin migrar).
@@ -152,6 +174,7 @@ Vista en `/cambios`: dos secciones — **Cambio mutuo** (su `their_dupes_for_me 
 | `src/lib/calcUtils.ts` | Calculadora de sobres: `expectedNew`, `simulateWithTrade`, `projectionTable`, `projectionCurves` |
 | `src/lib/csvUtils.ts` | Export/import CSV grilla 49×20 (+bonus): `generateCsv`, `parseCsv` |
 | `src/lib/cocaColaPlayers.ts` | Datos de los 14 jugadores Coca-Cola (nombre + código FIFA del país) |
+| `src/lib/mcdonaldsStickers.ts` | 48 códigos FIFA en orden del álbum + helpers `mcdCodeForIndex()` / `mcdIndexFromCode()` para el patrón `{PAÍS}13G` |
 | `src/lib/exchangeUtils.ts` | Algoritmo de intercambio: `computeExchange`, `formatExchangeList` — lógica pura, sin Vue |
 | `src/lib/searchSections.ts` | `normalizeStr` (lowercase + sin acentos) + `matchesSection(section, query)` — match por nombre o código FIFA |
 | `src/lib/analytics.ts` | Wrapper sobre `@vercel/analytics` con no-op en mock mode + try/catch defensivo |
@@ -178,6 +201,8 @@ Los archivos en `supabase/migrations/` **no se aplican solos** — copiar el SQL
 |---|---|
 | `0001_trade_matches.sql` | RPC `public_trade_matches()` con CTEs (my_owned, my_dupes, candidates) + `LATERAL` joins. `SECURITY DEFINER`, grant solo a `authenticated`. |
 | `0002_profile_phone.sql` | Columna `phone text` en `profiles` + RPC `get_profile_phone(p_username)` (devuelve `null` si `auth.uid()` es null). Grant solo a `authenticated`. |
+| `0003_show_bonus.sql` | Columnas `show_bonus_coca_cola` y `show_bonus_mcdonalds` (boolean, default `false`). Requiere agregar ambos campos a la vista `public_album_stats` en Supabase Dashboard manualmente. |
+| `0004_trade_matches_filter.sql` | DROP `public_trade_matches()` sin params + CREATE con `p_sticker_number int default null`. Filtro `EXISTS` en CTE `candidates`. |
 
 ## Convenciones
 

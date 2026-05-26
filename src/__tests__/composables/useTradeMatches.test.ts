@@ -39,7 +39,7 @@ describe('useTradeMatches', () => {
     const { matches, loaded, load } = useTradeMatches();
     await load();
 
-    expect(supabase.rpc).toHaveBeenCalledWith('public_trade_matches');
+    expect(supabase.rpc).toHaveBeenCalledWith('public_trade_matches', {});
     expect(matches.value).toEqual(fakeMatches);
     expect(loaded.value).toBe(true);
   });

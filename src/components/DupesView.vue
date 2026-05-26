@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { MAIN_SECTIONS, BONUS_SECTIONS, codeForSticker } from '@/lib/albumData';
+import { teamFlagEmoji } from '@/lib/teamFlagEmoji';
 import { useStickers } from '@/composables/useStickers';
+import { useAuth } from '@/composables/useAuth';
 import SectionSearch from '@/components/SectionSearch.vue';
 import { matchesSection, matchesStickerCode } from '@/lib/searchSections';
 
@@ -11,6 +13,7 @@ const emit = defineEmits<{
 }>();
 
 const { stickers, stats, adjustDupes } = useStickers();
+const { profile } = useAuth();
 
 const searchQuery = ref('');
 const showAllOwned = ref(false);
@@ -67,8 +70,14 @@ const hasShowable = computed(() =>
 );
 
 const bonusDupesList = computed(() => {
-  const out: { num: number; section: string; sectionId: string; count: number; note: string }[] =
-    [];
+  const out: {
+    num: number;
+    section: string;
+    sectionId: string;
+    sectionCode: string;
+    count: number;
+    note: string;
+  }[] = [];
   for (const sec of BONUS_SECTIONS) {
     for (let i = 0; i < sec.count; i++) {
       const num = sec.startsAt + i;
@@ -78,6 +87,7 @@ const bonusDupesList = computed(() => {
         num,
         section: sec.name,
         sectionId: sec.id,
+        sectionCode: sec.code,
         count: s.dupes,
         note: s?.note ?? '',
       });
@@ -85,6 +95,16 @@ const bonusDupesList = computed(() => {
   }
   return out;
 });
+
+function isBonusVisible(sectionId: string): boolean {
+  if (sectionId === 'bonus-coca-cola') return !!profile.value?.show_bonus_coca_cola;
+  if (sectionId === 'bonus-mcdonalds') return !!profile.value?.show_bonus_mcdonalds;
+  return false;
+}
+
+const visibleBonusDupes = computed(() =>
+  bonusDupesList.value.filter((d) => isBonusVisible(d.sectionId)),
+);
 
 function copyDupes() {
   const lines: string[] = ['Tengo estas láminas repetidas para intercambiar:'];
@@ -101,11 +121,19 @@ function copyDupes() {
         .join(', ')}`,
     );
   }
-  if (bonusDupesList.value.length > 0) {
-    const bonusCodes = bonusDupesList.value
-      .map((d) => (d.count > 1 ? `${codeForSticker(d.num)} (+${d.count})` : codeForSticker(d.num)))
-      .join(', ');
-    lines.push(`🥤 Bonus — Coca-Cola: ${bonusCodes}`);
+  if (visibleBonusDupes.value.length > 0) {
+    const bySec = new Map<string, { name: string; code: string; codes: string[] }>();
+    for (const d of visibleBonusDupes.value) {
+      const sec = BONUS_SECTIONS.find((s) => s.id === d.sectionId);
+      if (!sec) continue;
+      if (!bySec.has(d.sectionId))
+        bySec.set(d.sectionId, { name: sec.name, code: sec.code, codes: [] });
+      const label = d.count > 1 ? `${codeForSticker(d.num)} (+${d.count})` : codeForSticker(d.num);
+      bySec.get(d.sectionId)!.codes.push(label);
+    }
+    for (const { name, code, codes } of bySec.values()) {
+      lines.push(`${teamFlagEmoji(code)} Bonus — ${name}: ${codes.join(', ')}`);
+    }
   }
   const text = lines.join('\n') + '\n\nhttps://quemefalta.vercel.app/';
   navigator.clipboard?.writeText(text).then(
@@ -228,7 +256,7 @@ function copyDupes() {
         </div>
       </div>
       <!-- Bonus dupes (inline con el resto) -->
-      <div v-for="d in bonusDupesList" :key="d.num" class="dupe-item">
+      <div v-for="d in visibleBonusDupes" :key="d.num" class="dupe-item">
         <button
           type="button"
           class="dupe-main-btn"
@@ -237,7 +265,7 @@ function copyDupes() {
         >
           <div class="dupe-num">{{ codeForSticker(d.num) }}</div>
           <div class="dupe-info">
-            <div class="dupe-section">🥤 {{ d.section }}</div>
+            <div class="dupe-section">{{ teamFlagEmoji(d.sectionCode) }} {{ d.section }}</div>
           </div>
         </button>
         <div

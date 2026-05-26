@@ -1,3 +1,5 @@
+import { mcdCodeForIndex, mcdIndexFromCode } from './mcdonaldsStickers';
+
 export interface AlbumSection {
   id: string;
   name: string;
@@ -126,6 +128,14 @@ export const ALBUM_SECTIONS: AlbumSection[] = [
     startsAt: 981,
     isBonus: true,
   },
+  {
+    id: 'bonus-mcdonalds',
+    name: "McDonald's",
+    code: 'MCD',
+    count: 48,
+    startsAt: 995,
+    isBonus: true,
+  },
 ];
 
 export const MAIN_SECTIONS = ALBUM_SECTIONS.filter((s) => !s.isBonus);
@@ -144,6 +154,10 @@ export function sectionForSticker(stickerNumber: number): AlbumSection | undefin
 export function codeForSticker(stickerNumber: number): string {
   const sec = sectionForSticker(stickerNumber);
   if (!sec) return `?${stickerNumber}`;
+  // McDonald's usa código especial: {PAÍS}13G
+  if (sec.id === 'bonus-mcdonalds') {
+    return mcdCodeForIndex(stickerNumber - sec.startsAt);
+  }
   const indexInSection = sec.zeroIndexed
     ? stickerNumber - sec.startsAt
     : stickerNumber - sec.startsAt + 1;
@@ -155,6 +169,13 @@ export function codeForSticker(stickerNumber: number): string {
  * Returns undefined if code is invalid.
  */
 export function stickerNumberFromCode(code: string): number | undefined {
+  // McDonald's: patrón {PAÍS}13G (e.g. ARG13G, MEX13G)
+  const mcdIdx = mcdIndexFromCode(code);
+  if (mcdIdx !== undefined) {
+    const mcdSec = ALBUM_SECTIONS.find((s) => s.id === 'bonus-mcdonalds');
+    if (mcdSec) return mcdSec.startsAt + mcdIdx;
+  }
+
   const match = code.toUpperCase().match(/^([A-Z]+)(\d+)$/);
   if (!match) return undefined;
   const [, prefix, numStr] = match;

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ref } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import * as mockSupabase from '../mocks/supabase';
@@ -42,6 +42,10 @@ beforeEach(async () => {
 
   const mod = await import('@/composables/useStickers');
   useStickers = mod.useStickers;
+});
+
+afterEach(() => {
+  vi.clearAllTimers();
 });
 
 describe('useStickers', () => {
@@ -579,7 +583,7 @@ describe('useStickers', () => {
       await vi.waitFor(() => expect(loaded.value).toBe(true));
 
       setQueryResult({ data: null, error: null });
-      const count = await addBatch([0, -1, 995, 5]);
+      const count = await addBatch([0, -1, 1043, 5]);
 
       expect(count).toBe(1);
       expect(stickers.value[5]?.owned).toBe(true);
@@ -777,7 +781,7 @@ describe('useStickers', () => {
       setQueryResult({ data: null, error: null });
       const data = new Map([
         [0, 1],
-        [995, 1],
+        [1043, 1],
         [5, 1],
       ]);
       const changed = await importBulk(data, 'merge');

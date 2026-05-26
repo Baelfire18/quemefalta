@@ -1,15 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 import { useTradeMatches, type TradeMatch } from '@/composables/useTradeMatches';
 import { useMeta } from '@/composables/useMeta';
-import { TOTAL_STICKERS } from '@/lib/albumData';
+import {
+  TOTAL_STICKERS,
+  stickerNumberFromCode,
+  codeForSticker,
+  sectionForSticker,
+} from '@/lib/albumData';
 import { track } from '@/lib/analytics';
+import SectionSearch from '@/components/SectionSearch.vue';
 
 const router = useRouter();
 const { profile: myProfile } = useAuth();
-const { matches, loading, loaded, error, load } = useTradeMatches();
+const { matches, loading, loaded, error, activeStickerFilter, load } = useTradeMatches();
+
+const searchQuery = ref('');
+const filterHint = ref<string | null>(null);
+const filterError = ref<string | null>(null);
 
 useMeta(computed(() => ({ title: 'Con quién intercambiar cerca tuyo — QueMeFalta' })));
 
@@ -19,7 +29,8 @@ const charityMatches = computed(() =>
 );
 
 function pct(owned: number): number {
-  return Math.min(100, Math.round((owned / TOTAL_STICKERS) * 100 * 10) / 10);
+  // Cap numerator to exclude bonus stickers that inflate owned_count beyond TOTAL_STICKERS
+  return Math.round((Math.min(owned, TOTAL_STICKERS) / TOTAL_STICKERS) * 100 * 10) / 10;
 }
 
 function initialOf(m: TradeMatch): string {
@@ -45,8 +56,39 @@ function goToTrade(m: TradeMatch) {
 }
 
 function handleRefresh() {
+  clearFilter();
+}
+
+function handleSearch() {
+  const raw = searchQuery.value.replace(/\s+/g, '').trim();
+  if (!raw) {
+    clearFilter();
+    return;
+  }
+  const stickerNum = stickerNumberFromCode(raw);
+  if (stickerNum == null) {
+    filterError.value = `"${searchQuery.value.trim()}" no es un código válido`;
+    filterHint.value = null;
+    return;
+  }
+  filterError.value = null;
+  const code = codeForSticker(stickerNum);
+  const sec = sectionForSticker(stickerNum);
+  filterHint.value = sec ? `${code} — ${sec.name}` : code;
+  track('filter_trade_matches', { sticker: code });
+  load(true, stickerNum);
+}
+
+function clearFilter() {
+  searchQuery.value = '';
+  filterHint.value = null;
+  filterError.value = null;
   load(true);
 }
+
+watch(searchQuery, (val) => {
+  if (!val && filterHint.value) clearFilter();
+});
 
 onMounted(() => {
   track('view_trade_matches');
@@ -87,6 +129,27 @@ onMounted(() => {
       </button>
     </header>
 
+    <div class="tm-search-area">
+      <SectionSearch
+        v-model="searchQuery"
+        placeholder="Buscar lámina... (ej: MEX5, ARG1)"
+        aria-label="Filtrar por lámina"
+        @enter="handleSearch"
+      />
+      <div v-if="filterHint" class="tm-filter-chip">
+        Filtrando: <strong>{{ filterHint }}</strong>
+        <button
+          type="button"
+          class="tm-filter-clear"
+          aria-label="Quitar filtro"
+          @click="clearFilter"
+        >
+          &times;
+        </button>
+      </div>
+      <div v-else-if="filterError" class="tm-filter-error" role="alert">{{ filterError }}</div>
+    </div>
+
     <div v-if="error" class="tm-error" role="alert">
       {{ error }}
       <button class="tm-error-btn" @click="handleRefresh">Reintentar</button>
@@ -103,11 +166,16 @@ onMounted(() => {
     </ul>
 
     <div v-else-if="loaded && matches.length === 0" class="tm-empty">
-      <p>Todavía no hay matches.</p>
-      <p class="tm-empty-sub">
-        Cuando otros usuarios marquen sus repetidas vas a verlos acá ordenados por cuánto te sirven
-        sus láminas.
-      </p>
+      <template v-if="activeStickerFilter != null">
+        <p>Nadie tiene {{ filterHint ?? 'esa lámina' }} como repetida.</p>
+      </template>
+      <template v-else>
+        <p>Todavía no hay matches.</p>
+        <p class="tm-empty-sub">
+          Cuando otros usuarios marquen sus repetidas vas a verlos acá ordenados por cuánto te
+          sirven sus láminas.
+        </p>
+      </template>
     </div>
 
     <template v-else>
@@ -260,6 +328,40 @@ onMounted(() => {
 .tm-refresh:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.tm-search-area {
+  margin-bottom: 14px;
+}
+.tm-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--mint);
+  background: rgba(77, 208, 161, 0.08);
+  border: 1px solid rgba(77, 208, 161, 0.3);
+  border-radius: 6px;
+}
+.tm-filter-clear {
+  background: transparent;
+  border: none;
+  color: rgba(77, 208, 161, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+.tm-filter-clear:hover {
+  color: var(--mint);
+}
+.tm-filter-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--coral);
 }
 
 .tm-error {

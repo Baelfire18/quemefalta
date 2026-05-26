@@ -16,14 +16,20 @@ const matches = ref<TradeMatch[]>([]);
 const loading = ref(false);
 const loaded = ref(false);
 const error = ref<string | null>(null);
+const activeStickerFilter = ref<number | null>(null);
 
-async function load(force = false) {
+async function load(force = false, stickerNumber?: number) {
   if (loading.value) return;
-  if (loaded.value && !force) return;
+  const hasFilter = stickerNumber != null;
+  if (loaded.value && !force && !hasFilter) return;
   loading.value = true;
   error.value = null;
+  activeStickerFilter.value = stickerNumber ?? null;
 
-  const { data, error: err } = await withAuthRetry(() => supabase.rpc('public_trade_matches'));
+  const rpcParams = hasFilter ? { p_sticker_number: stickerNumber } : {};
+  const { data, error: err } = await withAuthRetry(() =>
+    supabase.rpc('public_trade_matches', rpcParams),
+  );
 
   if (err) {
     error.value = err.message ?? 'No se pudo cargar la lista.';
@@ -42,6 +48,7 @@ export function useTradeMatches() {
     loading: readonly(loading),
     loaded: readonly(loaded),
     error: readonly(error),
+    activeStickerFilter: readonly(activeStickerFilter),
     load,
   };
 }

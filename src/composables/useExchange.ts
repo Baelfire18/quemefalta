@@ -8,6 +8,8 @@ export interface PublicProfile {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
+  show_bonus_coca_cola: boolean;
+  show_bonus_mcdonalds: boolean;
   owned_count: number;
   dupes_count: number;
 }
@@ -22,7 +24,12 @@ export function useExchange(usernameA: Ref<string>, usernameB: Ref<string>) {
 
   const exchange = computed<ExchangeResult | null>(() => {
     if (!profileA.value || !profileB.value) return null;
-    return computeExchange(stickerMapA.value, stickerMapB.value);
+    const skipBonusIds = new Set<string>();
+    if (!profileA.value.show_bonus_coca_cola || !profileB.value.show_bonus_coca_cola)
+      skipBonusIds.add('bonus-coca-cola');
+    if (!profileA.value.show_bonus_mcdonalds || !profileB.value.show_bonus_mcdonalds)
+      skipBonusIds.add('bonus-mcdonalds');
+    return computeExchange(stickerMapA.value, stickerMapB.value, skipBonusIds);
   });
 
   function mainStats(map: StickerMap) {

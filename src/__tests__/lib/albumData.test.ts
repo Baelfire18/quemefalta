@@ -50,8 +50,8 @@ describe('albumData', () => {
   });
 
   describe('ALBUM_SECTIONS', () => {
-    it('has 50 sections (1 intro + 48 teams + 1 bonus)', () => {
-      expect(ALBUM_SECTIONS).toHaveLength(50);
+    it('has 51 sections (1 intro + 48 teams + 2 bonus)', () => {
+      expect(ALBUM_SECTIONS).toHaveLength(51);
     });
 
     it('first section is intro', () => {
@@ -104,22 +104,24 @@ describe('albumData', () => {
       expect(MAIN_SECTIONS).toHaveLength(49);
     });
 
-    it('BONUS_SECTIONS has 1 section (Coca-Cola)', () => {
-      expect(BONUS_SECTIONS).toHaveLength(1);
+    it("BONUS_SECTIONS has 2 sections (Coca-Cola + McDonald's)", () => {
+      expect(BONUS_SECTIONS).toHaveLength(2);
       expect(BONUS_SECTIONS[0].code).toBe('CC');
       expect(BONUS_SECTIONS[0].count).toBe(14);
+      expect(BONUS_SECTIONS[1].code).toBe('MCD');
+      expect(BONUS_SECTIONS[1].count).toBe(48);
     });
 
     it('TOTAL_STICKERS equals 980 (main only)', () => {
       expect(TOTAL_STICKERS).toBe(980);
     });
 
-    it('BONUS_STICKERS equals 14', () => {
-      expect(BONUS_STICKERS).toBe(14);
+    it('BONUS_STICKERS equals 62 (14 CC + 48 MCD)', () => {
+      expect(BONUS_STICKERS).toBe(62);
     });
 
-    it('TOTAL_WITH_BONUS equals 994', () => {
-      expect(TOTAL_WITH_BONUS).toBe(994);
+    it('TOTAL_WITH_BONUS equals 1042', () => {
+      expect(TOTAL_WITH_BONUS).toBe(1042);
     });
   });
 
@@ -156,8 +158,16 @@ describe('albumData', () => {
       expect(sectionForSticker(994)?.code).toBe('CC');
     });
 
-    it('returns undefined for sticker 995 (out of bounds)', () => {
-      expect(sectionForSticker(995)).toBeUndefined();
+    it("returns McDonald's section for sticker 995", () => {
+      expect(sectionForSticker(995)?.code).toBe('MCD');
+    });
+
+    it("returns McDonald's section for sticker 1042", () => {
+      expect(sectionForSticker(1042)?.code).toBe('MCD');
+    });
+
+    it('returns undefined for sticker 1043 (out of bounds)', () => {
+      expect(sectionForSticker(1043)).toBeUndefined();
     });
   });
 
@@ -190,8 +200,16 @@ describe('albumData', () => {
       expect(codeForSticker(994)).toBe('CC14');
     });
 
+    it("returns MC-MEX-13 for sticker 995 (McDonald's first)", () => {
+      expect(codeForSticker(995)).toBe('MC-MEX-13');
+    });
+
+    it("returns MC-PAN-13 for sticker 1042 (McDonald's last)", () => {
+      expect(codeForSticker(1042)).toBe('MC-PAN-13');
+    });
+
     it('returns ?N for invalid sticker number', () => {
-      expect(codeForSticker(995)).toBe('?995');
+      expect(codeForSticker(1043)).toBe('?1043');
       expect(codeForSticker(0)).toBe('?0');
     });
   });
@@ -243,6 +261,27 @@ describe('albumData', () => {
 
     it('returns undefined for CC15 (out of range)', () => {
       expect(stickerNumberFromCode('CC15')).toBeUndefined();
+    });
+
+    it("returns 995 for MC-MEX-13 (McDonald's first)", () => {
+      expect(stickerNumberFromCode('MC-MEX-13')).toBe(995);
+    });
+
+    it("returns 1042 for MC-PAN-13 (McDonald's last)", () => {
+      expect(stickerNumberFromCode('MC-PAN-13')).toBe(1042);
+    });
+
+    it('returns 1031 for MC-ARG-13', () => {
+      expect(stickerNumberFromCode('MC-ARG-13')).toBe(1031);
+    });
+
+    it("handles McDonald's codes case-insensitively", () => {
+      expect(stickerNumberFromCode('mc-mex-13')).toBe(995);
+      expect(stickerNumberFromCode('MC-arg-13')).toBe(1031);
+    });
+
+    it("returns undefined for invalid McDonald's code", () => {
+      expect(stickerNumberFromCode('MC-ZZZ-13')).toBeUndefined();
     });
 
     it('is the inverse of codeForSticker', () => {

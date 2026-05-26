@@ -5,6 +5,7 @@ import ballImg from '@/assets/ball-stadium.png';
 import crestImg from '@/assets/ball-crest.jpg';
 import squadImg from '@/assets/field-squad.jpg';
 import bonusImg from '@/assets/coca-cola-bonus.jpg';
+import mcdBonusImg from '@/assets/mcdonalds-bonus.jpg';
 import cocaColaSfx from '@/assets/coca-cola-open.mp3';
 import { FWC_HORIZONTAL_IMG, FWC_VERTICAL_IMG, FWC_IMG_OVERRIDES } from '@/lib/fwcConfig';
 
@@ -51,7 +52,7 @@ const cardImg = computed(() => {
     if (override) return override;
     return isFwcH.value ? FWC_HORIZONTAL_IMG : FWC_VERTICAL_IMG;
   }
-  if (props.variant === 'bonus') return bonusImg;
+  if (props.variant === 'bonus') return props.code.startsWith('MC-') ? mcdBonusImg : bonusImg;
   if (isCrest.value) return crestImg;
   if (isSquad.value) return squadImg;
   return ballImg;
@@ -87,9 +88,10 @@ watch(
 );
 const hasNote = computed(() => !!props.state.note);
 const isBonus = computed(() => props.variant === 'bonus');
+const isCocaColaBonus = computed(() => isBonus.value && !props.code.startsWith('MC-'));
 
 function handleCardClick() {
-  if (isBonus.value) {
+  if (isCocaColaBonus.value) {
     cocaColaAudio.currentTime = 0;
     cocaColaAudio.play().catch(() => {});
   }
@@ -97,7 +99,7 @@ function handleCardClick() {
 }
 
 function handleCycle() {
-  if (isBonus.value) {
+  if (isCocaColaBonus.value) {
     cocaColaAudio.currentTime = 0;
     cocaColaAudio.play().catch(() => {});
   }

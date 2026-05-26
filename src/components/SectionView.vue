@@ -10,6 +10,7 @@ import { teamFlagEmoji } from '@/lib/teamFlagEmoji';
 import { FWC_CODE, getFwcVariant } from '@/lib/fwcConfig';
 import { track } from '@/lib/analytics';
 import { COCA_COLA_PLAYERS } from '@/lib/cocaColaPlayers';
+import { MCD_TEAM_CODES } from '@/lib/mcdonaldsStickers';
 import { teamFlagEmoji as flagEmoji } from '@/lib/teamFlagEmoji';
 
 const isPreview = inject<Ref<boolean>>('isPreview', ref(false));
@@ -39,6 +40,8 @@ const sectionHeadIcon = computed(() => teamFlagEmoji(props.section.code));
 const isTeamSection = computed(() => !!props.section.isTeam);
 const isFwcSection = computed(() => props.section.code === FWC_CODE);
 
+const isMcdSection = computed(() => props.section.id === 'bonus-mcdonalds');
+
 const items = computed(() => {
   const isZero = !!props.section.zeroIndexed;
   return Array.from({ length: props.section.count }, (_, i) => {
@@ -53,11 +56,23 @@ const items = computed(() => {
     } else if (isFwcSection.value) {
       variant = getFwcVariant(indexInSection);
     }
-    const code = `${props.section.code}${indexInSection}`;
-    const player = COCA_COLA_PLAYERS[code];
-    const playerName = player?.name
-      ? `${player.name}${player.country ? ` ${flagEmoji(player.country) || player.country}` : ''}`
-      : undefined;
+
+    // Código y nombre del jugador/equipo
+    let code: string;
+    let playerName: string | undefined;
+    if (isMcdSection.value) {
+      const teamCode = MCD_TEAM_CODES[i];
+      code = `MC-${teamCode}-13`;
+      const flag = flagEmoji(teamCode) || teamCode;
+      playerName = `${flag} ${teamCode}`;
+    } else {
+      code = `${props.section.code}${indexInSection}`;
+      const player = COCA_COLA_PLAYERS[code];
+      playerName = player?.name
+        ? `${player.name}${player.country ? ` ${flagEmoji(player.country) || player.country}` : ''}`
+        : undefined;
+    }
+
     return {
       number: num,
       code,
@@ -125,8 +140,11 @@ function confirmClear() {
           {{ section.name }}
         </div>
         <div class="sect-meta">
-          {{ section.code }}{{ section.zeroIndexed ? 0 : 1 }}—{{ section.code
-          }}{{ section.zeroIndexed ? section.count - 1 : section.count }}
+          <template v-if="isMcdSection">MC-MEX-13—MC-PAN-13</template>
+          <template v-else>
+            {{ section.code }}{{ section.zeroIndexed ? 0 : 1 }}—{{ section.code
+            }}{{ section.zeroIndexed ? section.count - 1 : section.count }}
+          </template>
         </div>
       </div>
       <div class="sect-badge">{{ ownedCount }}/{{ section.count }}</div>
