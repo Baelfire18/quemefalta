@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { supabase, withAuthRetry, reestablishConnection } from '@/lib/supabase';
 import { useAuth } from '@/composables/useAuth';
@@ -14,6 +14,8 @@ import {
 import { useMeta } from '@/composables/useMeta';
 import { teamFlagEmoji } from '@/lib/teamFlagEmoji';
 import { track } from '@/lib/analytics';
+import { launchFireworks } from '@/lib/fireworks';
+import { shareCelebrationCard } from '@/lib/celebrationCard';
 import QrModal from '@/components/QrModal.vue';
 
 interface PublicProfile {
@@ -113,6 +115,17 @@ const stats = computed(() => {
     completedSections: completedSectionNames.value.length,
   };
 });
+
+let fireworksCleanup: (() => void) | null = null;
+watch(
+  () => stats.value.missing,
+  (missing) => {
+    if (missing === 0 && stats.value.owned > 0) {
+      fireworksCleanup = launchFireworks();
+    }
+  },
+  { immediate: true },
+);
 
 const displayName = computed(() => {
   return profile.value?.display_name?.trim() || profile.value?.username;
@@ -242,6 +255,18 @@ async function shareProfile() {
   try {
     const name = profile.value.display_name || profile.value.username;
     const url = `${globalThis.location.origin}/u/${profile.value.username}`;
+
+    // Si el álbum está completo, compartir la card tipo story
+    if (stats.value.missing === 0 && stats.value.owned > 0) {
+      track('share_profile', { kind: isOwnProfile.value ? 'own' : 'other', result: 'card' });
+      await shareCelebrationCard({
+        name,
+        owned: stats.value.owned,
+        profileUrl: `https://quemefalta.vercel.app/u/${profile.value.username}`,
+      });
+      return;
+    }
+
     const ownerLabel = isOwnProfile.value ? 'Mi álbum' : `El álbum de ${name}`;
     const result = await share({
       title: `${ownerLabel} del Mundial — ${stats.value.pct}% completo`,
@@ -412,6 +437,7 @@ function retryLoad() {
 }
 
 onMounted(() => loadProfileData(0));
+onUnmounted(() => fireworksCleanup?.());
 
 const compareInput = ref('');
 const showCompareInput = ref(false);

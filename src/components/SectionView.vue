@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, inject } from 'vue';
+import { computed, ref, inject, watch, onMounted } from 'vue';
 import type { Ref } from 'vue';
+import confetti from 'canvas-confetti';
 import StickerCard from '@/components/StickerCard.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useStickers } from '@/composables/useStickers';
@@ -91,6 +92,22 @@ const ownedCount = computed(() => {
 });
 
 const isComplete = computed(() => ownedCount.value === props.section.count);
+
+let wasComplete = false;
+onMounted(() => {
+  wasComplete = isComplete.value;
+});
+watch(isComplete, (now) => {
+  if (now && !wasComplete) {
+    confetti({
+      particleCount: 80,
+      spread: 60,
+      origin: { y: 0.7 },
+      colors: ['#e8b341', '#4dd0a1', '#f6f1e1'],
+    });
+  }
+  wasComplete = now;
+});
 
 const hasAny = computed(() => ownedCount.value > 0);
 
