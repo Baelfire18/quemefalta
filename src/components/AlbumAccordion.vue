@@ -267,12 +267,57 @@ defineExpose({ openSection });
         <span class="acc-team-flag">{{ teamFlagEmoji(bs.code) }}</span>
         <span class="acc-team-name">{{ bs.name }}</span>
         <span class="acc-bonus-pill">BONUS</span>
-        <div class="acc-team-bar">
-          <div
-            class="acc-team-fill"
-            :style="{ width: `${bs.pct}%`, background: barColor(bs.pct, bs.complete) }"
+        <svg
+          class="acc-bottle"
+          viewBox="0 0 160 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-label="Progreso Coca-Cola"
+        >
+          <defs>
+            <path
+              id="bottle-shape"
+              d="
+                M3 6
+                C6 2,14 1,30 1 C46 0.5,54 3,60 7
+                C64 9.5,68 9.5,72 7
+                C78 3,86 1,96 1.5
+                C106 2,112 6,116 10
+                L141 10 L141 9.5 L144 9.5 L152 9.5
+                Q156 9.5,156 12 Q156 14.5,152 14.5
+                L144 14.5 L141 14.5 L141 14
+                L116 14
+                C112 18,106 22,96 22.5
+                C86 23,78 21,72 17
+                C68 14.5,64 14.5,60 17
+                C54 21,46 23.5,30 23
+                C14 23,6 22,3 18
+                Q0 15,0 12 Q0 9,3 6 Z
+              "
+            />
+            <clipPath id="bottle-clip">
+              <use href="#bottle-shape" />
+            </clipPath>
+          </defs>
+          <rect
+            x="0"
+            y="0"
+            width="160"
+            height="24"
+            clip-path="url(#bottle-clip)"
+            fill="rgba(246,241,225,0.06)"
           />
-        </div>
+          <use href="#bottle-shape" fill="none" stroke="rgba(246,241,225,0.2)" stroke-width="0.8" />
+          <rect
+            x="0"
+            y="0"
+            :width="(bs.pct / 100) * 160"
+            height="24"
+            clip-path="url(#bottle-clip)"
+            :fill="barColor(bs.pct, bs.complete)"
+            class="acc-bottle-fill"
+          />
+        </svg>
         <div class="acc-team-right">
           <span class="acc-team-count" :class="{ 'acc-count-done': bs.complete }">
             {{ bs.owned }}/{{ bs.count }}
@@ -495,6 +540,14 @@ defineExpose({ openSection });
   border-radius: 10px;
   overflow: hidden;
   margin-top: 6px;
+}
+.acc-bottle {
+  flex: 2;
+  min-width: 80px;
+  height: 18px;
+}
+.acc-bottle-fill {
+  transition: width 0.3s ease;
 }
 .acc-bonus-pill {
   font-family: var(--mono);
